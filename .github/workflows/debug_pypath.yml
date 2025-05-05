@@ -25,9 +25,10 @@ jobs:
           echo "=== Inspecting with bash -ex ==="
           echo "OS: ubuntu-latest"
           echo "Python: ${{ matrix.python-version }}"
+          echo "PATH: $PATH"
           echo "which python: $(which python)"
           echo "python --version: $(python --version)"
-          echo "PYTHONPATH: $PYTHONPATH"
+          echo "PYTHONPATH: ${PYTHONPATH:-<not set>}"
 
       - name: Inspect Python (bash -elx)
         shell: bash -elx {0}
@@ -35,9 +36,10 @@ jobs:
           echo "=== Inspecting with bash -elx ==="
           echo "OS: ubuntu-latest"
           echo "Python: ${{ matrix.python-version }}"
+          echo "PATH: $PATH"
           echo "which python: $(which python)"
           echo "python --version: $(python --version)"
-          echo "PYTHONPATH: $PYTHONPATH"
+          echo "PYTHONPATH: ${PYTHONPATH:-<not set>}"
 
   debug-ubuntu-latest-arm64:
     name: Debug | ubuntu-latest-arm64 | Python ${{ matrix.python-version }}
@@ -58,9 +60,10 @@ jobs:
           echo "=== Inspecting with bash -ex ==="
           echo "OS: ubuntu-latest-arm64"
           echo "Python: ${{ matrix.python-version }}"
+          echo "PATH: $PATH"
           echo "which python: $(which python)"
           echo "python --version: $(python --version)"
-          echo "PYTHONPATH: $PYTHONPATH"
+          echo "PYTHONPATH: ${PYTHONPATH:-<not set>}"
 
       - name: Inspect Python (bash -elx)
         shell: bash -elx {0}
@@ -68,9 +71,10 @@ jobs:
           echo "=== Inspecting with bash -elx ==="
           echo "OS: ubuntu-latest-arm64"
           echo "Python: ${{ matrix.python-version }}"
+          echo "PATH: $PATH"
           echo "which python: $(which python)"
           echo "python --version: $(python --version)"
-          echo "PYTHONPATH: $PYTHONPATH"
+          echo "PYTHONPATH: ${PYTHONPATH:-<not set>}"
 
   debug-macos-13:
     name: Debug | macos-13 | Python ${{ matrix.python-version }}
@@ -91,9 +95,10 @@ jobs:
           echo "=== Inspecting with bash -ex ==="
           echo "OS: macos-13"
           echo "Python: ${{ matrix.python-version }}"
+          echo "PATH: $PATH"
           echo "which python: $(which python)"
           echo "python --version: $(python --version)"
-          echo "PYTHONPATH: $PYTHONPATH"
+          echo "PYTHONPATH: ${PYTHONPATH:-<not set>}"
 
       - name: Inspect Python (bash -elx)
         shell: bash -elx {0}
@@ -101,9 +106,10 @@ jobs:
           echo "=== Inspecting with bash -elx ==="
           echo "OS: macos-13"
           echo "Python: ${{ matrix.python-version }}"
+          echo "PATH: $PATH"
           echo "which python: $(which python)"
           echo "python --version: $(python --version)"
-          echo "PYTHONPATH: $PYTHONPATH"
+          echo "PYTHONPATH: ${PYTHONPATH:-<not set>}"
 
   debug-macos-14:
     name: Debug | macos-14 | Python ${{ matrix.python-version }}
@@ -124,9 +130,10 @@ jobs:
           echo "=== Inspecting with bash -ex ==="
           echo "OS: macos-14"
           echo "Python: ${{ matrix.python-version }}"
+          echo "PATH: $PATH"
           echo "which python: $(which python)"
           echo "python --version: $(python --version)"
-          echo "PYTHONPATH: $PYTHONPATH"
+          echo "PYTHONPATH: ${PYTHONPATH:-<not set>}"
 
       - name: Inspect Python (bash -elx)
         shell: bash -elx {0}
@@ -134,9 +141,10 @@ jobs:
           echo "=== Inspecting with bash -elx ==="
           echo "OS: macos-14"
           echo "Python: ${{ matrix.python-version }}"
+          echo "PATH: $PATH"
           echo "which python: $(which python)"
           echo "python --version: $(python --version)"
-          echo "PYTHONPATH: $PYTHONPATH"
+          echo "PYTHONPATH: ${PYTHONPATH:-<not set>}"
 
   debug-windows-2019:
     name: Debug | windows-2019 | Python ${{ matrix.python-version }}
@@ -158,10 +166,11 @@ jobs:
           echo "=== Inspecting with bash -ex ==="
           echo "OS: windows-2019"
           echo "Python: ${{ matrix.python-version }}"
+          echo "PATH: $PATH"
           # Using 'where' on Windows is more reliable than 'which'
           echo "which python: $(where python || echo 'python not found')"
           echo "python --version: $(python --version || echo 'python not found')"
-          echo "PYTHONPATH: ${PYTHONPATH:-<not set>}" # Use parameter expansion for clarity
+          echo "PYTHONPATH: ${PYTHONPATH:-<not set>}"
 
       - name: Inspect Python (bash -elx)
         shell: bash -elx {0}
@@ -169,7 +178,8 @@ jobs:
           echo "=== Inspecting with bash -elx ==="
           echo "OS: windows-2019"
           echo "Python: ${{ matrix.python-version }}"
+          echo "PATH: $PATH"
           # Using 'where' on Windows is more reliable than 'which'
           echo "which python: $(where python || echo 'python not found')"
           echo "python --version: $(python --version || echo 'python not found')"
-          echo "PYTHONPATH: ${PYTHONPATH:-<not set>}" # Use parameter expansion for clarity
+          echo "PYTHONPATH: ${PYTHONPATH:-<not set>}"
