@@ -1,0 +1,55 @@
+name: Debug Python Path with Shell Flags
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  debug-ex:
+    name: Debug with bash -ex
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -ex {0}
+    strategy:
+      matrix:
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Inspect Python (bash -ex)
+        run: |
+          echo "=== bash -ex ==="
+          echo "Matrix Python version: ${{ matrix.python-version }}"
+          echo "which python: $(which python)"
+          echo "python --version: $(python --version)"
+          echo "PYTHONPATH: $PYTHONPATH"
+
+  debug-elx:
+    name: Debug with bash -elx
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -elx {0}
+    strategy:
+      matrix:
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Inspect Python (bash -elx)
+        run: |
+          echo "=== bash -elx ==="
+          echo "Matrix Python version: ${{ matrix.python-version }}"
+          echo "which python: $(which python)"
+          echo "python --version: $(python --version)"
+          echo "PYTHONPATH: $PYTHONPATH"
