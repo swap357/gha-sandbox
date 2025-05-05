@@ -6,15 +6,15 @@ on:
   pull_request:
 
 jobs:
-  debug-ex:
-    name: Debug with bash -ex on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+  # --- Ubuntu Latest ---
+  debug-ex-ubuntu-latest:
+    name: Debug -ex | ubuntu-latest | Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash -ex {0}
     strategy:
       matrix:
-        os: ["ubuntu-latest", "ubuntu-latest-arm64", "macos-13", "macos-14", "windows-2019"]
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
@@ -22,24 +22,23 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-
       - name: Inspect Python (bash -ex)
         run: |
           echo "=== bash -ex ==="
+          echo "OS: ubuntu-latest"
           echo "Matrix Python version: ${{ matrix.python-version }}"
           echo "which python: $(which python)"
           echo "python --version: $(python --version)"
           echo "PYTHONPATH: $PYTHONPATH"
 
-  debug-elx:
-    name: Debug with bash -elx on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+  debug-elx-ubuntu-latest:
+    name: Debug -elx | ubuntu-latest | Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash -elx {0}
     strategy:
       matrix:
-        os: ["ubuntu-latest", "ubuntu-latest-arm64", "macos-13", "macos-14", "windows-2019"]
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
@@ -47,10 +46,206 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-
       - name: Inspect Python (bash -elx)
         run: |
           echo "=== bash -elx ==="
+          echo "OS: ubuntu-latest"
+          echo "Matrix Python version: ${{ matrix.python-version }}"
+          echo "which python: $(which python)"
+          echo "python --version: $(python --version)"
+          echo "PYTHONPATH: $PYTHONPATH"
+
+  # --- Ubuntu Latest ARM64 ---
+  debug-ex-ubuntu-latest-arm64:
+    name: Debug -ex | ubuntu-latest-arm64 | Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest-arm64
+    defaults:
+      run:
+        shell: bash -ex {0}
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Inspect Python (bash -ex)
+        run: |
+          echo "=== bash -ex ==="
+          echo "OS: ubuntu-latest-arm64"
+          echo "Matrix Python version: ${{ matrix.python-version }}"
+          echo "which python: $(which python)"
+          echo "python --version: $(python --version)"
+          echo "PYTHONPATH: $PYTHONPATH"
+
+  debug-elx-ubuntu-latest-arm64:
+    name: Debug -elx | ubuntu-latest-arm64 | Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest-arm64
+    defaults:
+      run:
+        shell: bash -elx {0}
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Inspect Python (bash -elx)
+        run: |
+          echo "=== bash -elx ==="
+          echo "OS: ubuntu-latest-arm64"
+          echo "Matrix Python version: ${{ matrix.python-version }}"
+          echo "which python: $(which python)"
+          echo "python --version: $(python --version)"
+          echo "PYTHONPATH: $PYTHONPATH"
+
+  # --- macOS 13 ---
+  debug-ex-macos-13:
+    name: Debug -ex | macos-13 | Python ${{ matrix.python-version }}
+    runs-on: macos-13
+    defaults:
+      run:
+        shell: bash -ex {0}
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Inspect Python (bash -ex)
+        run: |
+          echo "=== bash -ex ==="
+          echo "OS: macos-13"
+          echo "Matrix Python version: ${{ matrix.python-version }}"
+          echo "which python: $(which python)"
+          echo "python --version: $(python --version)"
+          echo "PYTHONPATH: $PYTHONPATH"
+
+  debug-elx-macos-13:
+    name: Debug -elx | macos-13 | Python ${{ matrix.python-version }}
+    runs-on: macos-13
+    defaults:
+      run:
+        shell: bash -elx {0}
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Inspect Python (bash -elx)
+        run: |
+          echo "=== bash -elx ==="
+          echo "OS: macos-13"
+          echo "Matrix Python version: ${{ matrix.python-version }}"
+          echo "which python: $(which python)"
+          echo "python --version: $(python --version)"
+          echo "PYTHONPATH: $PYTHONPATH"
+
+  # --- macOS 14 ---
+  debug-ex-macos-14:
+    name: Debug -ex | macos-14 | Python ${{ matrix.python-version }}
+    runs-on: macos-14
+    defaults:
+      run:
+        shell: bash -ex {0}
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Inspect Python (bash -ex)
+        run: |
+          echo "=== bash -ex ==="
+          echo "OS: macos-14"
+          echo "Matrix Python version: ${{ matrix.python-version }}"
+          echo "which python: $(which python)"
+          echo "python --version: $(python --version)"
+          echo "PYTHONPATH: $PYTHONPATH"
+
+  debug-elx-macos-14:
+    name: Debug -elx | macos-14 | Python ${{ matrix.python-version }}
+    runs-on: macos-14
+    defaults:
+      run:
+        shell: bash -elx {0}
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Inspect Python (bash -elx)
+        run: |
+          echo "=== bash -elx ==="
+          echo "OS: macos-14"
+          echo "Matrix Python version: ${{ matrix.python-version }}"
+          echo "which python: $(which python)"
+          echo "python --version: $(python --version)"
+          echo "PYTHONPATH: $PYTHONPATH"
+
+  # --- Windows 2019 ---
+  debug-ex-windows-2019:
+    name: Debug -ex | windows-2019 | Python ${{ matrix.python-version }}
+    runs-on: windows-2019
+    defaults:
+      run:
+        shell: bash -ex {0}
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Inspect Python (bash -ex)
+        run: |
+          echo "=== bash -ex ==="
+          echo "OS: windows-2019"
+          echo "Matrix Python version: ${{ matrix.python-version }}"
+          echo "which python: $(which python)"
+          echo "python --version: $(python --version)"
+          echo "PYTHONPATH: $PYTHONPATH"
+
+  debug-elx-windows-2019:
+    name: Debug -elx | windows-2019 | Python ${{ matrix.python-version }}
+    runs-on: windows-2019
+    defaults:
+      run:
+        shell: bash -elx {0}
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Inspect Python (bash -elx)
+        run: |
+          echo "=== bash -elx ==="
+          echo "OS: windows-2019"
           echo "Matrix Python version: ${{ matrix.python-version }}"
           echo "which python: $(which python)"
           echo "python --version: $(python --version)"
