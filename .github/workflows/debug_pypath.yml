@@ -7,13 +7,14 @@ on:
 
 jobs:
   debug-ex:
-    name: Debug with bash -ex
-    runs-on: ubuntu-latest
+    name: Debug with bash -ex on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     defaults:
       run:
         shell: bash -ex {0}
     strategy:
       matrix:
+        os: ["ubuntu-latest", "ubuntu-latest-arm64", "macos-13", "macos-14", "windows-2019"]
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v3
@@ -31,13 +32,14 @@ jobs:
           echo "PYTHONPATH: $PYTHONPATH"
 
   debug-elx:
-    name: Debug with bash -elx
-    runs-on: ubuntu-latest
+    name: Debug with bash -elx on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     defaults:
       run:
         shell: bash -elx {0}
     strategy:
       matrix:
+        os: ["ubuntu-latest", "ubuntu-latest-arm64", "macos-13", "macos-14", "windows-2019"]
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v3
