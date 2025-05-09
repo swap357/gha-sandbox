@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
 
+# Add concurrency control
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
 jobs:
   debug-ubuntu-latest:
     name: Debug | ubuntu-latest | Python ${{ matrix.python-version }}
@@ -43,7 +48,7 @@ jobs:
 
   debug-ubuntu-latest-arm64:
     name: Debug | ubuntu-latest-arm64 | Python ${{ matrix.python-version }}
-    runs-on: ubuntu-latest-arm64
+    runs-on: ubuntu-latest-arm
     strategy:
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
