@@ -1,0 +1,15 @@
+name: Check Visual Studio Version
+
+on: [push]
+
+jobs:
+  check_vs_version:
+    runs-on: windows-2025
+    steps:
+      - name: Check VS Version
+        run: |
+          echo "Checking Visual Studio version..."
+          & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property displayName -property catalog_productDisplayVersion
+          echo "Attempting with Get-VSSetupInstance (requires VSSetup module)"
+          Get-VSSetupInstance | Select-Object DisplayName, Catalog.ProductDisplayVersion
+        shell: pwsh
