@@ -54,6 +54,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Print platform.machine()
+        run: |
+          python -c "import platform; print(f'platform.machine(): {platform.machine()}')"
+        shell: bash
+
       - name: Inspect Python (bash -ex)
         shell: bash -ex {0}
         run: |
