@@ -48,7 +48,7 @@ jobs:
 
   debug-ubuntu-latest-arm64:
     name: Debug | ubuntu-latest-arm64 | Python ${{ matrix.python-version }}
-    runs-on: ubuntu-latest-arm
+    runs-on: ubuntu-24.04-arm
     strategy:
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
