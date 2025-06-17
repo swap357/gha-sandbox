@@ -1,0 +1,75 @@
+name: Debug Windows 2025 PowerShell Commands
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Add concurrency control
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  debug-windows-2025:
+    name: Debug | windows-2025 | Python ${{ matrix.python-version }}
+    runs-on: windows-2025
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # Note: Assumes bash is available on the Windows runner (e.g., Git Bash)
+      - name: Inspect Python (bash -ex)
+        shell: bash -ex {0}
+        run: |
+          echo "=== Inspecting with bash -ex ==="
+          echo "OS: windows-2025"
+          echo "Python: ${{ matrix.python-version }}"
+          echo "PATH: $PATH"
+          # Using 'where' on Windows is more reliable than 'which'
+          echo "which python: $(where python || echo 'python not found')"
+          echo "python --version: $(python --version || echo 'python not found')"
+          echo "PYTHONPATH: ${PYTHONPATH:-<not set>}"
+
+      - name: Inspect Python (bash -elx)
+        shell: bash -elx {0}
+        run: |
+          echo "=== Inspecting with bash -elx ==="
+          echo "OS: windows-2025"
+          echo "Python: ${{ matrix.python-version }}"
+          echo "PATH: $PATH"
+          # Using 'where' on Windows is more reliable than 'which'
+          echo "which python: $(where python || echo 'python not found')"
+          echo "python --version: $(python --version || echo 'python not found')"
+          echo "PYTHONPATH: ${PYTHONPATH:-<not set>}"
+
+      - name: Debug PowerShell Memory Commands
+        shell: bash -ex {0}
+        run: |
+          # Debug: Test PowerShell commands directly
+          echo "=== Testing PowerShell Memory Commands ==="
+          echo "Command 1: TotalVirtualMemorySize"
+          powershell -NoProfile -Command "'TotalVirtualMemorySize ' + (Get-CimInstance -ClassName Win32_OperatingSystem).TotalVirtualMemorySize" || echo "Failed: TotalVirtualMemorySize"
+
+          echo "Command 2: FreeVirtualMemory"
+          powershell -NoProfile -Command "'FreeVirtualMemory ' + (Get-CimInstance -ClassName Win32_OperatingSystem).FreeVirtualMemory" || echo "Failed: FreeVirtualMemory"
+
+          echo "Command 3: Test old WMIC (should fail on Windows 2025)"
+          wmic OS get TotalVirtualMemorySize || echo "Expected: WMIC failed (deprecated)"
+
+          echo "=== Environment Debug ==="
+          echo "Windows Version:"
+          systeminfo | findstr /B /C:"OS Name" /C:"OS Version" || echo "systeminfo failed"
+
+          echo "PowerShell Version:"
+          powershell -Command '$PSVersionTable.PSVersion' || echo "PowerShell version check failed"
+
+          echo "Available WMI Classes:"
+          powershell -NoProfile -Command "Get-CimClass -ClassName Win32_OperatingSystem | Select-Object CimClassName" || echo "CIM class check failed"
