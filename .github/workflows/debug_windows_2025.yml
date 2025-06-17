@@ -73,3 +73,122 @@ jobs:
 
           echo "Available WMI Classes:"
           powershell -NoProfile -Command "Get-CimClass -ClassName Win32_OperatingSystem | Select-Object CimClassName" || echo "CIM class check failed"
+
+      - name: Parse PowerShell Memory Output with Python
+        shell: bash -ex {0}
+        run: |
+          cat << 'EOF' > parse_memory.py
+          import subprocess
+          import sys
+          import re
+
+          def run_cmd(cmd):
+              """Run command and return output, return None if command fails"""
+              try:
+                  result = subprocess.run(cmd, capture_output=True, text=True, shell=True)
+                  if result.returncode == 0:
+                      return result.stdout.strip()
+                  else:
+                      print(f"Command failed: {cmd}")
+                      print(f"Error: {result.stderr}")
+                      return None
+              except Exception as e:
+                  print(f"Exception running command {cmd}: {e}")
+                  return None
+
+          def parse_memory_output(output, search_key):
+              """Parse memory output to extract numeric value"""
+              if not output:
+                  return None
+
+              # Look for the search key followed by a number
+              pattern = rf'{search_key}\s+(\d+)'
+              match = re.search(pattern, output)
+              if match:
+                  return int(match.group(1))
+
+              # Alternative: look for just numbers in the output
+              numbers = re.findall(r'\d+', output)
+              if numbers:
+                  return int(numbers[-1])  # Take the last number found
+
+              return None
+
+          # Windows memory configuration similar to the structure you provided
+          windows_config = {
+              'cmd': (),
+              'cmd_optional': (
+                  "powershell -NoProfile -Command \"'TotalVirtualMemorySize ' + (Get-CimInstance -ClassName Win32_OperatingSystem).TotalVirtualMemorySize\"",
+                  "powershell -NoProfile -Command \"'FreeVirtualMemory ' + (Get-CimInstance -ClassName Win32_OperatingSystem).FreeVirtualMemory\"",
+              ),
+              'kwds': {
+                  # output string fragment -> result dict key
+                  'TotalVirtualMemorySize': 'mem_total',
+                  'FreeVirtualMemory': 'mem_available',
+              },
+          }
+
+          print("=== Python Memory Parser ===")
+          print("Testing PowerShell memory commands and parsing output...")
+
+          memory_results = {}
+
+          # Process each optional command
+          for i, cmd in enumerate(windows_config['cmd_optional']):
+              print(f"\nRunning command {i+1}: {cmd}")
+              output = run_cmd(cmd)
+              print(f"Raw output: {repr(output)}")
+
+              if output:
+                  # Try to match against each keyword
+                  for search_key, result_key in windows_config['kwds'].items():
+                      if search_key in output:
+                          value = parse_memory_output(output, search_key)
+                          if value is not None:
+                              memory_results[result_key] = value
+                              print(f"Parsed {search_key} -> {result_key}: {value}")
+                              break
+
+          print(f"\nFinal memory results: {memory_results}")
+
+          # Convert to more readable format
+          if 'mem_total' in memory_results:
+              total_gb = memory_results['mem_total'] / (1024 * 1024)  # KB to GB
+              print(f"Total Virtual Memory: {memory_results['mem_total']} KB ({total_gb:.2f} GB)")
+
+          if 'mem_available' in memory_results:
+              avail_gb = memory_results['mem_available'] / (1024 * 1024)  # KB to GB
+              print(f"Available Virtual Memory: {memory_results['mem_available']} KB ({avail_gb:.2f} GB)")
+
+          if 'mem_total' in memory_results and 'mem_available' in memory_results:
+              used = memory_results['mem_total'] - memory_results['mem_available']
+              used_gb = used / (1024 * 1024)
+              usage_percent = (used / memory_results['mem_total']) * 100
+              print(f"Used Virtual Memory: {used} KB ({used_gb:.2f} GB, {usage_percent:.1f}%)")
+
+          # Test alternative parsing methods
+          print("\n=== Testing Alternative Parsing Methods ===")
+
+          # Method 1: Direct PowerShell with numeric output
+          print("Method 1: Direct numeric output")
+          cmd1 = "powershell -NoProfile -Command \"(Get-CimInstance -ClassName Win32_OperatingSystem).TotalVirtualMemorySize\""
+          output1 = run_cmd(cmd1)
+          if output1:
+              try:
+                  total_mem = int(output1.strip())
+                  print(f"Total Virtual Memory (direct): {total_mem} KB")
+              except ValueError:
+                  print(f"Could not parse direct output: {repr(output1)}")
+
+          cmd2 = "powershell -NoProfile -Command \"(Get-CimInstance -ClassName Win32_OperatingSystem).FreeVirtualMemory\""
+          output2 = run_cmd(cmd2)
+          if output2:
+              try:
+                  free_mem = int(output2.strip())
+                  print(f"Free Virtual Memory (direct): {free_mem} KB")
+              except ValueError:
+                  print(f"Could not parse direct output: {repr(output2)}")
+
+          EOF
+
+          python parse_memory.py
