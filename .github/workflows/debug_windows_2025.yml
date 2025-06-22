@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+    paths:
+      - .github/workflows/debug_windows_2025.yml
   workflow_dispatch:
 
 # Add concurrency control
