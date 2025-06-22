@@ -1,5 +1,6 @@
 import networkx as nx
 from graphviz import Source
+from IPython.display import display
 
 # Minimal example to trigger pygraphviz usage via networkx
 
@@ -10,8 +11,10 @@ def to_graphviz():
 
 if __name__ == "__main__":
     try:
-        # Print the dot source to exercise pygraphviz
-        print(to_graphviz().source)
+        gviz = to_graphviz()
+        print(gviz.source)
+        # Emulate notebook usage
+        display(gviz)
     except Exception as e:
         print("Encountered error:", e)
         raise
