@@ -1,0 +1,41 @@
+name: Test PyGraphviz
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  conda-default:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: test
+          auto-update-conda: true
+          python-version: '3.10'
+      - name: Install via conda
+        shell: bash -l {0}
+        run: |
+          conda install -y graphviz pygraphviz
+      - name: Run test
+        shell: bash -l {0}
+        run: |
+          python test_graphviz.py
+
+  pip-wheel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y graphviz graphviz-dev
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install via pip
+        run: |
+          pip install graphviz pygraphviz
+      - name: Run test
+        run: |
+          python test_graphviz.py
