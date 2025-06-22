@@ -3,6 +3,7 @@
 debug GHA environment quirks
 
 This repository contains a workflow that exercises `pygraphviz` on
-GitHub Actions using both conda and pip installs. Run the `pygraphviz-test`
-workflow manually to check whether the shared libraries required by
+GitHub Actions using both conda and pip installs. The `pygraphviz-test`
+workflow runs automatically on pull requests and can also be triggered
+manually. Use it to verify that the shared libraries required by
 `pygraphviz` are available on the Ubuntu runner.
