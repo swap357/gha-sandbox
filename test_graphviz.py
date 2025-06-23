@@ -1,11 +1,10 @@
 import networkx as nx
-from IPython.display import display
 from graphviz import Source
 
 G = nx.DiGraph([(1, 2), (2, 3)])
 try:
     src = Source(nx.nx_agraph.to_agraph(G).string())
-    display(src)
+    src.pipe(format="png")  # ensure Graphviz runs
     print("SUCCESS")
 except Exception as e:
     print("FAILED:", e)
