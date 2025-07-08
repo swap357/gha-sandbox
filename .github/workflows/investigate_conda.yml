@@ -1,0 +1,44 @@
+name: Investigate Conda Compilers on macOS
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  investigate-compilers:
+    name: Investigate conda compilers on osx-64
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          python-version: "3.12"
+          miniconda-version: "latest"
+          channels: defaults
+          channel-priority: strict
+
+      - name: Install conda-build and test compiler
+        shell: bash -l {0}
+        run: |
+          echo "--- Installing conda-build ---"
+          conda install --yes -n base conda-build -c defaults
+          echo "--- Conda Info ---"
+          conda info
+          echo "--- Conda List ---"
+          conda list
+
+          echo "--- Locating and identifying compiler ---"
+          which clang++
+          clang++ --version
+
+          echo "--- Testing C++ compilation to check stdlib ---"
+          echo "#include <cstring>" | clang++ -x c++ -v -
