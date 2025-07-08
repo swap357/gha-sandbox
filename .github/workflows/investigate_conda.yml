@@ -40,7 +40,7 @@ jobs:
           mkdir -p "${sdk_dir}"
 
           # Define checksum (SHA256 for MacOSX10.10.sdk.tar.xz from phracker/MacOSX-SDKs@11.3)
-          echo "91a255dd33464501a141b777a829d5b7660c64188b2c4c297597148d504547b7  MacOSX10.10.sdk.tar.xz" > "${sdk_dir}/MacOSX10.10.sdk.checksum"
+          echo "3839b875df1f2bc98893b8502da456cc0b022c4666bc6b7eb5764a5f915a9b00  MacOSX10.10.sdk.tar.xz" > "${sdk_dir}/MacOSX10.10.sdk.checksum"
 
           # Download SDK
           echo "Downloading MacOSX10.10.sdk.tar.xz"
