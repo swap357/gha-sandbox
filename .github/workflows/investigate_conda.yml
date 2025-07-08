@@ -1,4 +1,4 @@
-name: Investigate Conda Compilers on macOS
+name: Investigate conda-build activation and CXXFLAGS
 
 on:
   push:
@@ -11,9 +11,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  investigate-compilers:
-    name: Investigate conda compilers on osx-64
+  investigate-cxxflags:
+    name: Investigate libcxx=${{ matrix.libcxx_version }}
     runs-on: macos-13
+    strategy:
+      fail-fast: false
+      matrix:
+        libcxx_version: ["17", "14"]
+
     steps:
       - uses: actions/checkout@v4
 
@@ -26,19 +31,40 @@ jobs:
           channels: defaults
           channel-priority: strict
 
-      - name: Install conda-build and test compiler
+      - name: Install conda-build and libcxx
         shell: bash -l {0}
         run: |
-          echo "--- Installing conda-build ---"
-          conda install --yes -n base conda-build -c defaults
+          echo "--- Installing conda-build and libcxx=${{ matrix.libcxx_version }} ---"
+          conda install --yes -n base conda-build 'libcxx=${{ matrix.libcxx_version }}'
           echo "--- Conda Info ---"
           conda info
           echo "--- Conda List ---"
           conda list
 
-          echo "--- Locating and identifying compiler ---"
-          which clang++
-          clang++ --version
+      - name: Build conda package to check CXXFLAGS
+        shell: bash -l {0}
+        run: |
+          mkdir recipe
+          cat << EOF > recipe/meta.yaml
+          package:
+             name: noname
+             version: 0
 
-          echo "--- Testing C++ compilation to check stdlib ---"
-          echo "#include <cstring>" | clang++ -x c++ -v -
+          source:
+             path: ..
+
+          build:
+            number: 1
+            script: printf "#include <cstring>\\nint main(void){};" | \$CXX \$CXXFLAGS -x c++ -v -
+
+          requirements:
+            build:
+              - {{ compiler('cxx') }}
+              - libcxx==${{ matrix.libcxx_version }}
+          EOF
+
+          echo "--- meta.yaml content ---"
+          cat recipe/meta.yaml
+
+          echo "--- Building conda package ---"
+          conda build recipe
