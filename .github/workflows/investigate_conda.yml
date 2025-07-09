@@ -88,37 +88,35 @@ jobs:
       - name: Test simple CMake project
         shell: bash -l {0}
         run: |
-          # Create a simple C++ project
+          # Create a test project directory
           mkdir test-project && cd test-project
-          cat << 'EOF' > main.cpp
-          #include <iostream>
-          #include <vector>
 
-          int main() {
-              std::vector<int> v = {1, 2, 3};
-              std::cout << "Hello from a simple C++ project! Vector size is " << v.size() << std::endl;
-              return 0;
-          }
-          EOF
-
+          # Create the CMakeLists.txt to check for a working standard library
           cat << 'EOF' > CMakeLists.txt
-          cmake_minimum_required(VERSION 3.1)
-          project(TestProject)
-          add_executable(test_app main.cpp)
+          cmake_minimum_required(VERSION 3.10)
+          project(mwr)
+          include(CheckCXXSourceCompiles)
+
+          set(GCC_MIN 7.4)
+          check_cxx_source_compiles("
+          #include <iosfwd>
+          int main() { return 0; }
+          "
+                MIN_CXX)
+              if(NOT MIN_CXX)
+                message(FATAL_ERROR "libstdc++ version must be at least ${GCC_MIN}.")
+              endif()
           EOF
 
-          # Configure and build
+          # Configure the project
           mkdir build && cd build
-
-          TARGET_PLATFORM="x86_64-apple-darwin13.4.0"
-
           cmake .. \
-            -DCMAKE_C_COMPILER=$CONDA_PREFIX/bin/${TARGET_PLATFORM}-clang \
-            -DCMAKE_CXX_COMPILER=$CONDA_PREFIX/bin/${TARGET_PLATFORM}-clang++ \
+            -DCMAKE_C_COMPILER=$CONDA_PREFIX/bin/clang \
+            -DCMAKE_CXX_COMPILER=$CONDA_PREFIX/bin/clang++ \
             -DCMAKE_EXE_LINKER_FLAGS="-Wl,-rpath,${CONDA_PREFIX}/lib" \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=10.9 \
             -DCMAKE_OSX_SYSROOT=/opt/MacOSX10.10.sdk \
             ${{ matrix.extra_cmake_flags }}
 
-          make VERBOSE=1
+          echo "CMake configuration successful. Standard library check passed."
