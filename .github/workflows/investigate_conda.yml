@@ -75,7 +75,7 @@ jobs:
         shell: bash -l {0}
         run: |
           echo "--- Installing build tools and libcxx=${{ matrix.libcxx_version }} ---"
-          conda install --yes -n base \
+          conda install --yes \
             'libcxx=${{ matrix.libcxx_version }}' \
             'clang_osx-64=${{ matrix.libcxx_version }}' \
             'clangxx_osx-64=${{ matrix.libcxx_version }}' \
@@ -88,6 +88,9 @@ jobs:
       - name: Test simple CMake project
         shell: bash -l {0}
         run: |
+          echo "--- Contents of bin directory ---"
+          ls -l $CONDA_PREFIX/bin
+
           # Create a test project directory
           mkdir test-project && cd test-project
 
