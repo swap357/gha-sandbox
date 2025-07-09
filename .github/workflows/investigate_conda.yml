@@ -75,7 +75,11 @@ jobs:
         shell: bash -l {0}
         run: |
           echo "--- Installing build tools and libcxx=${{ matrix.libcxx_version }} ---"
-          conda install --yes -n base 'libcxx=${{ matrix.libcxx_version }}' c-compiler cxx-compiler cmake ninja
+          conda install --yes -n base \
+            'libcxx=${{ matrix.libcxx_version }}' \
+            'clang_osx-64=${{ matrix.libcxx_version }}' \
+            'clangxx_osx-64=${{ matrix.libcxx_version }}' \
+            cmake ninja
           echo "--- Conda Info ---"
           conda info
           echo "--- Conda List ---"
