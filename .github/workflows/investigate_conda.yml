@@ -12,13 +12,28 @@ concurrency:
 
 jobs:
   test-cxxflags:
-    name: test libcxx=${{ matrix.libcxx_version }} on ${{ matrix.platform }}
+    name: test libcxx=${{ matrix.libcxx_version }}, ${{ matrix.description }}
     runs-on: macos-13
     strategy:
       fail-fast: false
       matrix:
-        libcxx_version: ["17", "14"]
-        platform: ["osx-64"]
+        include:
+          - libcxx_version: "17"
+            platform: "osx-64"
+            extra_cmake_flags: "-DCMAKE_FIND_FRAMEWORK=LAST -DCMAKE_FIND_APPBUNDLE=LAST"
+            description: "With FRAMEWORK/APPBUNDLE LAST"
+          - libcxx_version: "17"
+            platform: "osx-64"
+            extra_cmake_flags: ""
+            description: "Without FRAMEWORK/APPBUNDLE LAST"
+          - libcxx_version: "14"
+            platform: "osx-64"
+            extra_cmake_flags: "-DCMAKE_FIND_FRAMEWORK=LAST -DCMAKE_FIND_APPBUNDLE=LAST"
+            description: "With FRAMEWORK/APPBUNDLE LAST"
+          - libcxx_version: "14"
+            platform: "osx-64"
+            extra_cmake_flags: ""
+            description: "Without FRAMEWORK/APPBUNDLE LAST"
 
     steps:
       - uses: actions/checkout@v4
@@ -56,44 +71,44 @@ jobs:
           sudo tar -xf MacOSX10.10.sdk.tar.xz -C /opt
           echo "macOS SDK setup complete"
 
-      - name: Install conda-build and libcxx
+      - name: Install build tools and libcxx
         shell: bash -l {0}
         run: |
-          echo "--- Installing conda-build and libcxx=${{ matrix.libcxx_version }} ---"
-          conda install --yes -n base conda-build 'libcxx=${{ matrix.libcxx_version }}'
+          echo "--- Installing build tools and libcxx=${{ matrix.libcxx_version }} ---"
+          conda install --yes -n base 'libcxx=${{ matrix.libcxx_version }}' c-compiler cxx-compiler cmake ninja
           echo "--- Conda Info ---"
           conda info
           echo "--- Conda List ---"
           conda list
 
-      - name: Build conda package to check CXXFLAGS
+      - name: Test simple CMake project
         shell: bash -l {0}
         run: |
-          mkdir recipe
-          cat << EOF > recipe/meta.yaml
-          package:
-             name: noname
-             version: 0
+          # Create a simple C++ project
+          mkdir test-project && cd test-project
+          cat << 'EOF' > main.cpp
+          #include <iostream>
+          #include <vector>
 
-          source:
-             path: ..
-
-          build:
-            number: 1
-            script: printf "#include <cstring>\\nint main(void){};" | \$CXX \$CXXFLAGS -x c++ -v -
-
-          requirements:
-            build:
-              - {{ compiler('cxx') }}
-              - libcxx==${{ matrix.libcxx_version }}
+          int main() {
+              std::vector<int> v = {1, 2, 3};
+              std::cout << "Hello from a simple C++ project! Vector size is " << v.size() << std::endl;
+              return 0;
+          }
           EOF
 
-          echo "--- meta.yaml content ---"
-          cat recipe/meta.yaml
+          cat << 'EOF' > CMakeLists.txt
+          cmake_minimum_required(VERSION 3.1)
+          project(TestProject)
+          add_executable(test_app main.cpp)
+          EOF
 
-          echo "--- Building conda package ---"
-          EXTRA_ARGS=()
-          if [[ "${{ matrix.platform }}" == "osx-64" ]]; then
-            EXTRA_ARGS=(--variants '{"CONDA_BUILD_SYSROOT": "/opt/MacOSX10.10.sdk"}')
-          fi
-          conda build recipe "${EXTRA_ARGS[@]}"
+          # Configure and build
+          mkdir build && cd build
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=10.9 \
+            -DCMAKE_OSX_SYSROOT=/opt/MacOSX10.10.sdk \
+            ${{ matrix.extra_cmake_flags }}
+
+          make VERBOSE=1
