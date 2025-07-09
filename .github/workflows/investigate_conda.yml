@@ -109,7 +109,13 @@ jobs:
 
           # Configure and build
           mkdir build && cd build
+
+          TARGET_PLATFORM="x86_64-apple-darwin13.4.0"
+
           cmake .. \
+            -DCMAKE_C_COMPILER=$CONDA_PREFIX/bin/${TARGET_PLATFORM}-clang \
+            -DCMAKE_CXX_COMPILER=$CONDA_PREFIX/bin/${TARGET_PLATFORM}-clang++ \
+            -DCMAKE_EXE_LINKER_FLAGS="-Wl,-rpath,${CONDA_PREFIX}/lib" \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=10.9 \
             -DCMAKE_OSX_SYSROOT=/opt/MacOSX10.10.sdk \
