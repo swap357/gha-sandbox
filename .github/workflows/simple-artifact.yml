@@ -14,55 +14,21 @@ on:
   workflow_dispatch:
 
 jobs:
-  check:
-    name: Check if workflow should run
+  debug-issue-comment:
     runs-on: ubuntu-latest
-    outputs:
-      should-run: ${{ steps.check.outputs.should-run }}
+    if: github.event_name == 'issue_comment'
     steps:
-      - name: Check conditions
-        id: check
-        run: |
-          should_run="false"
-
-          # Manual trigger always runs
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "should-run=true" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          # Push to main with workflow file changes
-          if [ "${{ github.event_name }}" == "push" ]; then
-            echo "should-run=true" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          # Pull request with workflow file changes (already filtered by paths above)
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            echo "should-run=true" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          # Issue comment on PR with /gha run
-          if [ "${{ github.event_name }}" == "issue_comment" ]; then
-            if [ "${{ github.event.issue.pull_request }}" != "" ] && echo "${{ github.event.comment.body }}" | grep -q "/gha run"; then
-              echo "should-run=true" >> $GITHUB_OUTPUT
-              echo "Comment: ${{ github.event.comment.body }}"
-              echo "Commenter: ${{ github.event.comment.user.login }}"
-              exit 0
-            else
-              echo "should-run=false" >> $GITHUB_OUTPUT
-              exit 0
-            fi
-          fi
-
-          echo "should-run=false" >> $GITHUB_OUTPUT
+      - run: |
+          echo "Issue comment event triggered!"
+          echo "Comment body: ${{ github.event.comment.body }}"
+          echo "Is PR: ${{ github.event.issue.pull_request }}"
+          echo "Contains /gha run: $(echo '${{ github.event.comment.body }}' | grep -q '/gha run' && echo yes || echo no)"
 
   create-artifact:
     name: Create and Upload Artifact
     runs-on: ubuntu-latest
-    needs: check
-    if: needs.check.outputs.should-run == 'true'
+    needs: debug-issue-comment
+    if: needs.debug-issue-comment.outputs.should-run == 'true'
 
     steps:
       - name: Checkout code
