@@ -5,12 +5,10 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/simple-artifact.yml'
+  issue_comment:
+    types: [created, edited]
   pull_request:
     branches: [main]
-    paths:
-      - '.github/workflows/simple-artifact.yml'
-  issue_comment:
-    types: [created]
   workflow_dispatch:
 
 jobs:
