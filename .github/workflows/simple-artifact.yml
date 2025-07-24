@@ -14,10 +14,55 @@ on:
   workflow_dispatch:
 
 jobs:
+  check:
+    name: Check if workflow should run
+    runs-on: ubuntu-latest
+    outputs:
+      should-run: ${{ steps.check.outputs.should-run }}
+    steps:
+      - name: Check conditions
+        id: check
+        run: |
+          should_run="false"
+
+          # Manual trigger always runs
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "should-run=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Push to main with workflow file changes
+          if [ "${{ github.event_name }}" == "push" ]; then
+            echo "should-run=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Pull request with workflow file changes (already filtered by paths above)
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "should-run=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Issue comment on PR with /gha run
+          if [ "${{ github.event_name }}" == "issue_comment" ]; then
+            if [ "${{ github.event.issue.pull_request }}" != "" ] && echo "${{ github.event.comment.body }}" | grep -q "/gha run"; then
+              echo "should-run=true" >> $GITHUB_OUTPUT
+              echo "Comment: ${{ github.event.comment.body }}"
+              echo "Commenter: ${{ github.event.comment.user.login }}"
+              exit 0
+            else
+              echo "should-run=false" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          fi
+
+          echo "should-run=false" >> $GITHUB_OUTPUT
+
   create-artifact:
     name: Create and Upload Artifact
     runs-on: ubuntu-latest
-    if: github.event_name != 'issue_comment' || (github.event.issue.pull_request && contains(github.event.comment.body, '/gha run'))
+    needs: check
+    if: needs.check.outputs.should-run == 'true'
 
     steps:
       - name: Checkout code
@@ -31,6 +76,13 @@ jobs:
           echo "Repository: ${{ github.repository }}" >> artifact.txt
           echo "Commit: ${{ github.sha }}" >> artifact.txt
           echo "Branch: ${{ github.ref_name }}" >> artifact.txt
+          echo "Event: ${{ github.event_name }}" >> artifact.txt
+
+          # Add comment information if triggered by comment
+          if [ "${{ github.event_name }}" == "issue_comment" ]; then
+            echo "Triggered by comment: ${{ github.event.comment.body }}" >> artifact.txt
+            echo "Commenter: ${{ github.event.comment.user.login }}" >> artifact.txt
+          fi
 
           # Create a simple JSON file as well
           cat > metadata.json << EOF
@@ -40,9 +92,28 @@ jobs:
             "commit": "${{ github.sha }}",
             "branch": "${{ github.ref_name }}",
             "created_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-            "runner": "ubuntu-latest"
+            "runner": "ubuntu-latest",
+            "event": "${{ github.event_name }}"
           }
           EOF
+
+          # Add comment information to JSON if triggered by comment
+          if [ "${{ github.event_name }}" == "issue_comment" ]; then
+            cat > comment-metadata.json << EOF
+          {
+            "workflow": "${{ github.workflow }}",
+            "repository": "${{ github.repository }}",
+            "commit": "${{ github.sha }}",
+            "branch": "${{ github.ref_name }}",
+            "created_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "runner": "ubuntu-latest",
+            "event": "${{ github.event_name }}",
+            "trigger": "comment",
+            "comment": "${{ github.event.comment.body }}",
+            "commenter": "${{ github.event.comment.user.login }}"
+          }
+          EOF
+          fi
 
           # Create a directory with multiple files
           mkdir -p output
