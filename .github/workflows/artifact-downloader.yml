@@ -80,7 +80,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          BODY="Workflow completed successfully. ✅ <br>Run link: ${RUN_URL}<br><br><b>workflow-A artifact content:</b><br><pre>${{ steps.read-artifact.outputs.content }}</pre>"
+          BODY="Workflow completed successfully. ✅ <br> Run ID: ${{ github.run_id }} <br>Run link: ${RUN_URL}<br><br><b>workflow-A artifact content:</b><br><pre>${{ steps.read-artifact.outputs.content }}</pre>"
           gh pr comment ${{ steps.command.outputs.issue_number }} --body "$BODY" --repo ${{ github.repository }}
 
       - name: Respond on Failure
@@ -89,12 +89,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          BODY="command failed. ❌ <br> check run logs: ${RUN_URL}"
+          BODY="command failed. ❌ <br> Run ID: ${{ github.run_id }} <br> check run logs: ${RUN_URL}"
           gh pr comment ${{ steps.command.outputs.issue_number }} --body "$BODY" --repo ${{ github.repository }}
 
       - name: Log Success for Manual Dispatch
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
-          echo "Artifact downloaded from run ${{ steps.set-run-id.outputs.run_id }}!"
+          echo "Artifact downloaded from run ${{ steps.set-run-id.outputs.run_id }}! Run ID: ${{ github.run_id }}"
           echo "Artifact Content:"
           echo "${{ steps.read-artifact.outputs.content }}"
