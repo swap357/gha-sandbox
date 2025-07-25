@@ -1,8 +1,6 @@
 name: Debug Windows 2025 PowerShell Commands
 
 on:
-  push:
-    branches: [main]
   pull_request:
     paths:
       - .github/workflows/debug_windows_2025.yml
