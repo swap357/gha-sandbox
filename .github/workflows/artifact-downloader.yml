@@ -18,10 +18,10 @@ permissions:
 jobs:
   handle:
     runs-on: ubuntu-latest
+    if: github.event_name == 'issue_comment' && github.event.issue.pull_request
     steps:
       - name: Command
         id: command
-        if: github.event_name == 'issue_comment'
         uses: github/command@v2.0.1
         with:
           command: .run-b
