@@ -25,6 +25,19 @@ jobs:
           reaction: "rocket"
           allowed_contexts: pull_request
 
+      - name: command response
+        run: |
+          echo "command response"
+          echo "command: ${{ steps.command.outputs.command }}"
+          echo "reaction: ${{ steps.command.outputs.reaction }}"
+          echo "triggered: ${{ steps.command.outputs.triggered }}"
+          echo "continue: ${{ steps.command.outputs.continue }}"
+          echo "issue_number: ${{ steps.command.outputs.issue_number }}"
+          echo "actor: ${{ steps.command.outputs.actor }}"
+          echo "fork_ref: ${{ steps.command.outputs.fork_ref }}"
+          echo "ref: ${{ steps.command.outputs.ref }}"
+          echo "base_ref: ${{ steps.command.outputs.base_ref }}"
+
       - name: checkout code
         uses: actions/checkout@v4.2.2
 
