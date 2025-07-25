@@ -19,6 +19,7 @@ jobs:
     steps:
       - uses: github/command@v2.0.1
         id: command
+        name: command
         if: github.event_name == 'issue_comment' && github.event.issue.pull_request
         with:
           command: ".run-a"
@@ -26,6 +27,7 @@ jobs:
           allowed_contexts: pull_request
 
       - name: command response
+        if: steps.command.outputs.continue == 'true'
         run: |
           echo "command response"
           echo "command: ${{ steps.command.outputs.command }}"
