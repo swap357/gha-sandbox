@@ -1,8 +1,6 @@
 name: Check Visual Studio Version
 
 on:
-  push:
-    branches: [main]
   pull_request:
     paths:
       - .github/workflows/check-vs-version.yml
