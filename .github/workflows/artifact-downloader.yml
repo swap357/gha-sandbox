@@ -37,7 +37,11 @@ jobs:
             echo "run_id=${{ inputs.run_id }}" >> $GITHUB_OUTPUT
           elif [ "${{ steps.command.outputs.continue }}" == "true" ]; then
             PARAMS="${{ steps.command.outputs.params }}"
-            RUN_ID=$(echo "$PARAMS" | cut -d' ' -f1)
+            RUN_ID=$(echo "$PARAMS" | cut -d' ' -f2)
+            if [ -z "$RUN_ID" ]; then
+              echo "No run-id provided after command"
+              exit 1
+            fi
             echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
           else
             echo "No valid run-id provided"
