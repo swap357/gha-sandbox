@@ -22,7 +22,7 @@ jobs:
         name: command
         if: github.event_name == 'issue_comment' && github.event.issue.pull_request
         with:
-          command: ".run-a"
+          command: "/gha-run-a"
           reaction: "rocket"
           allowed_contexts: pull_request
           allow_forks: true
@@ -70,5 +70,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          BODY="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          BODY="Workflow completed successfully. ✅ <br> Run link: ${RUN_URL}"
+          gh pr comment ${{ steps.command.outputs.issue_number }} --body "$BODY"
+
+      - name: Respond on Failure
+        if: ${{ steps.command.outputs.continue == 'false' && github.event_name == 'issue_comment' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          BODY="command failed. ❌ <br> check run logs: ${RUN_URL}"
           gh pr comment ${{ steps.command.outputs.issue_number }} --body "$BODY"
