@@ -1,115 +1,51 @@
 name: Simple Artifact Workflow
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/simple-artifact.yml'
   issue_comment:
-    types: [created, edited]
-  pull_request:
-    branches: [main]
-  workflow_dispatch:
+    types: [created]
+
+permissions:
+  pull-requests: write
 
 jobs:
   create-artifact:
     name: Create and Upload Artifact
     runs-on: ubuntu-latest
-    if: |
-      (github.event_name == 'workflow_dispatch') ||
-      (github.event_name == 'push') ||
-      (github.event_name == 'pull_request') ||
-      (github.event_name == 'issue_comment')
+    if: ${{ github.event.issue.pull_request }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Create artifact content
+      - name: Check command
+        id: command
         run: |
-          echo "GitHub Actions Artifact" > artifact.txt
+          if [[ "${{ github.event.comment.user.login }}" != "github-actions[bot]" && "${{ github.event.comment.body }}" == ".run-a" ]]; then
+            echo "continue=true" >> $GITHUB_OUTPUT
+          else
+            echo "continue=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create artifact content
+        if: ${{ steps.command.outputs.continue == 'true' }}
+        run: |
+          echo "Workflow-A Artifact" > artifact.txt
+          echo "Triggered by .run-a command" >> artifact.txt
+          echo "Commenter: ${{ github.event.comment.user.login }}" >> artifact.txt
           echo "Created at: $(date)" >> artifact.txt
-          echo "Workflow: ${{ github.workflow }}" >> artifact.txt
           echo "Repository: ${{ github.repository }}" >> artifact.txt
           echo "Commit: ${{ github.sha }}" >> artifact.txt
-          echo "Branch: ${{ github.ref_name }}" >> artifact.txt
-          echo "Event: ${{ github.event_name }}" >> artifact.txt
-
-          # Add comment information if triggered by comment
-          if [ "${{ github.event_name }}" == "issue_comment" ]; then
-            echo "Triggered by comment: ${{ github.event.comment.body }}" >> artifact.txt
-            echo "Commenter: ${{ github.event.comment.user.login }}" >> artifact.txt
-          fi
-
-          # Create a simple JSON file as well
-          cat > metadata.json << EOF
-          {
-            "workflow": "${{ github.workflow }}",
-            "repository": "${{ github.repository }}",
-            "commit": "${{ github.sha }}",
-            "branch": "${{ github.ref_name }}",
-            "created_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-            "runner": "ubuntu-latest",
-            "event": "${{ github.event_name }}"
-          }
-          EOF
-
-          # Add comment information to JSON if triggered by comment
-          if [ "${{ github.event_name }}" == "issue_comment" ]; then
-            cat > comment-metadata.json << EOF
-          {
-            "workflow": "${{ github.workflow }}",
-            "repository": "${{ github.repository }}",
-            "commit": "${{ github.sha }}",
-            "branch": "${{ github.ref_name }}",
-            "created_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-            "runner": "ubuntu-latest",
-            "event": "${{ github.event_name }}",
-            "trigger": "comment",
-            "comment": "${{ github.event.comment.body }}",
-            "commenter": "${{ github.event.comment.user.login }}"
-          }
-          EOF
-          fi
-
-          # Create a directory with multiple files
-          mkdir -p output
-          echo "This is a sample output file" > output/sample.txt
-          echo "Another file with some data" > output/data.txt
-
-          # List what we created
-          echo "Files created:"
-          ls -la
-          echo "Output directory contents:"
-          ls -la output/
 
       - name: Upload artifact as single file
+        if: ${{ steps.command.outputs.continue == 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          name: artifact-file
+          name: workflow-a-artifact
           path: artifact.txt
           retention-days: 30
 
-      - name: Upload metadata as JSON
-        uses: actions/upload-artifact@v4
-        with:
-          name: metadata-json
-          path: metadata.json
-          retention-days: 30
-
-      - name: Upload output directory
-        uses: actions/upload-artifact@v4
-        with:
-          name: output-files
-          path: output/
-          retention-days: 30
-
-      - name: Upload everything as zip
-        uses: actions/upload-artifact@v4
-        with:
-          name: all-files
-          path: |
-            artifact.txt
-            metadata.json
-            output/
-          retention-days: 30
+      - name: Respond with Pong
+        if: ${{ steps.command.outputs.continue == 'true' }}
+        run: |
+          BODY="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          gh pr comment ${{ github.event.issue.number }} --body "$BODY"
