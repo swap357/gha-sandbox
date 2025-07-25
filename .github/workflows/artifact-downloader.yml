@@ -18,7 +18,6 @@ permissions:
 jobs:
   handle:
     runs-on: ubuntu-latest
-    if: github.event_name == 'issue_comment' && github.event.issue.pull_request
     steps:
       - name: Command
         id: command
@@ -71,13 +70,17 @@ jobs:
             echo "content=No artifact file found" >> $GITHUB_OUTPUT
           fi
 
+      - name: Checkout for GH CLI
+        uses: actions/checkout@v4.2.2
+        if: ${{ github.event_name == 'issue_comment' && steps.command.outputs.continue == 'true' }}
+
       - name: Respond with Success
         if: ${{ github.event_name == 'issue_comment' && steps.command.outputs.continue == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           BODY="workflowB:Artifact downloaded from run ${{ steps.set-run-id.outputs.run_id }}! \nCheck workflow logs for details.\n\nArtifact Content:\n${{ steps.read-artifact.outputs.content }}"
-          gh pr comment ${{ steps.command.outputs.issue_number }} --body "$BODY"
+          gh pr comment ${{ steps.command.outputs.issue_number }} --body "$BODY" --repo ${{ github.repository }}
 
       - name: Log Success for Manual Dispatch
         if: ${{ github.event_name == 'workflow_dispatch' }}
