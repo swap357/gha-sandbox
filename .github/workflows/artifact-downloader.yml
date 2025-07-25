@@ -18,10 +18,10 @@ permissions:
 jobs:
   handle:
     runs-on: ubuntu-latest
-    if: github.event_name == 'issue_comment' && github.event.issue.pull_request
     steps:
       - name: Command
         id: command
+        if: github.event_name == 'issue_comment'
         uses: github/command@v2.0.1
         with:
           command: .run-b
@@ -30,28 +30,54 @@ jobs:
           allow_forks: true
           param_separator: ' '
 
+      - name: Set Run ID
+        id: set-run-id
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "run_id=${{ inputs.run_id }}" >> $GITHUB_OUTPUT
+          elif [ "${{ steps.command.outputs.continue }}" == "true" ]; then
+            PARAMS="${{ steps.command.outputs.params }}"
+            RUN_ID=$(echo "$PARAMS" | cut -d' ' -f1)
+            echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
+          else
+            echo "No valid run-id provided"
+            exit 1
+          fi
+
       - name: Download Artifact
-        if: ${{ steps.command.outputs.continue == 'true' }}
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: workflow-a-artifact
           path: downloaded-artifact
-          run-id: ${{ github.event_name != 'issue_comment' && inputs.run_id || fromJson(steps.command.outputs.params)[0] }}
+          run-id: ${{ steps.set-run-id.outputs.run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: List Downloaded Files
-        if: ${{ steps.command.outputs.continue == 'true' }}
         run: ls -la downloaded-artifact
+
+      - name: Read Artifact Content
+        id: read-artifact
+        run: |
+          if [ -f downloaded-artifact/artifact.txt ]; then
+            CONTENT=$(cat downloaded-artifact/artifact.txt)
+            echo "content<<EOF" >> $GITHUB_OUTPUT
+            echo "$CONTENT" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "content=No artifact file found" >> $GITHUB_OUTPUT
+          fi
 
       - name: Respond with Success
         if: ${{ github.event_name == 'issue_comment' && steps.command.outputs.continue == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          RUN_ID="${{ fromJson(steps.command.outputs.params)[0] }}"
-          BODY="Artifact downloaded from run $RUN_ID! Check workflow logs for details."
+          BODY="workflowB:Artifact downloaded from run ${{ steps.set-run-id.outputs.run_id }}! \nCheck workflow logs for details.\n\nArtifact Content:\n${{ steps.read-artifact.outputs.content }}"
           gh pr comment ${{ steps.command.outputs.issue_number }} --body "$BODY"
 
       - name: Log Success for Manual Dispatch
         if: ${{ github.event_name == 'workflow_dispatch' }}
-        run: echo "Artifact downloaded from run ${{ inputs.run_id }}!"
+        run: |
+          echo "Artifact downloaded from run ${{ steps.set-run-id.outputs.run_id }}!"
+          echo "Artifact Content:"
+          echo "${{ steps.read-artifact.outputs.content }}"
