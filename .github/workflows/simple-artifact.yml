@@ -25,6 +25,7 @@ jobs:
           command: ".run-a"
           reaction: "rocket"
           allowed_contexts: pull_request
+          allow_forks: true
 
       - name: command response
         if: steps.command.outputs.continue == 'true'
