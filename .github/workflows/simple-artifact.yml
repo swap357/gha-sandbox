@@ -15,24 +15,24 @@ permissions:
 jobs:
   handle:
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && github.event.issue.pull_request)
     steps:
       - uses: github/command@v2.0.1
         id: command
+        if: github.event_name == 'issue_comment' && github.event.issue.pull_request
         with:
           command: ".run-a"
           reaction: "rocket"
           allowed_contexts: pull_request
 
       - name: checkout code
-        if: ${{ steps.command.outputs.continue == 'true' }}
         uses: actions/checkout@v4.2.2
 
       - name: create artifact content
-        if: ${{ steps.command.outputs.continue == 'true' }}
         run: |
           echo "Workflow-A Artifact" > artifact.txt
           echo "Triggered by: ${{ github.event_name }}" >> artifact.txt
-          if [ "${{ github.event_name }}" == "issue_comment" ]; then
+          if [ "${{ github.event_name }}" == "issue_comment" ] && [ "${{ steps.command.outputs.continue }}" == "true" ]; then
             echo "Command: .run-a" >> artifact.txt
             echo "Commenter: ${{ steps.command.outputs.actor }}" >> artifact.txt
           fi
