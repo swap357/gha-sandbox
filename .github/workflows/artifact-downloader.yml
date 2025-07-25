@@ -1,0 +1,57 @@
+name: Artifact Downloader Workflow
+
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'Run ID of the workflow to download artifact from'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: read
+
+jobs:
+  handle:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issue_comment' && github.event.issue.pull_request
+    steps:
+      - name: Command
+        id: command
+        uses: github/command@v2.0.1
+        with:
+          command: .run-b
+          reaction: rocket
+          allowed_contexts: pull_request
+          allow_forks: true
+          param_separator: ' '
+
+      - name: Download Artifact
+        if: ${{ steps.command.outputs.continue == 'true' }}
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: workflow-a-artifact
+          path: downloaded-artifact
+          run-id: ${{ github.event_name != 'issue_comment' && inputs.run_id || fromJson(steps.command.outputs.params)[0] }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List Downloaded Files
+        if: ${{ steps.command.outputs.continue == 'true' }}
+        run: ls -la downloaded-artifact
+
+      - name: Respond with Success
+        if: ${{ github.event_name == 'issue_comment' && steps.command.outputs.continue == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RUN_ID="${{ fromJson(steps.command.outputs.params)[0] }}"
+          BODY="Artifact downloaded from run $RUN_ID! Check workflow logs for details."
+          gh pr comment ${{ steps.command.outputs.issue_number }} --body "$BODY"
+
+      - name: Log Success for Manual Dispatch
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: echo "Artifact downloaded from run ${{ inputs.run_id }}!"
