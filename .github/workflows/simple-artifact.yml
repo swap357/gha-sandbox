@@ -3,49 +3,52 @@ name: Simple Artifact Workflow
 on:
   issue_comment:
     types: [created]
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '.github/workflows/simple-artifact.yml'
 
 permissions:
+  contents: read
   pull-requests: write
 
 jobs:
-  create-artifact:
-    name: Create and Upload Artifact
+  handle:
     runs-on: ubuntu-latest
-    if: ${{ github.event.issue.pull_request }}
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Check command
+      - uses: github/command@v2.0.1
         id: command
-        run: |
-          if [[ "${{ github.event.comment.user.login }}" != "github-actions[bot]" && "${{ github.event.comment.body }}" == ".run-a" ]]; then
-            echo "continue=true" >> $GITHUB_OUTPUT
-          else
-            echo "continue=false" >> $GITHUB_OUTPUT
-          fi
+        with:
+          command: ".run-a"
+          reaction: "rocket"
+          allowed_contexts: pull_request
 
-      - name: Create artifact content
+      - name: checkout code
+        if: ${{ steps.command.outputs.continue == 'true' }}
+        uses: actions/checkout@v4.2.2
+
+      - name: create artifact content
         if: ${{ steps.command.outputs.continue == 'true' }}
         run: |
           echo "Workflow-A Artifact" > artifact.txt
-          echo "Triggered by .run-a command" >> artifact.txt
-          echo "Commenter: ${{ github.event.comment.user.login }}" >> artifact.txt
+          echo "Triggered by: ${{ github.event_name }}" >> artifact.txt
+          if [ "${{ github.event_name }}" == "issue_comment" ]; then
+            echo "Command: .run-a" >> artifact.txt
+            echo "Commenter: ${{ steps.command.outputs.actor }}" >> artifact.txt
+          fi
           echo "Created at: $(date)" >> artifact.txt
           echo "Repository: ${{ github.repository }}" >> artifact.txt
           echo "Commit: ${{ github.sha }}" >> artifact.txt
 
       - name: Upload artifact as single file
-        if: ${{ steps.command.outputs.continue == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: workflow-a-artifact
           path: artifact.txt
           retention-days: 30
 
-      - name: Respond with Pong
+      - name: Respond with workflow run link
         if: ${{ steps.command.outputs.continue == 'true' }}
         run: |
           BODY="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          gh pr comment ${{ github.event.issue.number }} --body "$BODY"
+          gh pr comment ${{ steps.command.outputs.issue_number }} --body "$BODY"
