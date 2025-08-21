@@ -1,6 +1,7 @@
 name: Debug Runners
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - .github/workflows/debug_runners.yml
