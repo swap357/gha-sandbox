@@ -25,6 +25,8 @@ jobs:
             runner: macos-14
           - platform: win-64
             runner: windows-2019
+          - platform: macos-14-large
+            runner: macos-14-large
 
     runs-on: ${{ matrix.runner }}
     name: Debug ${{ matrix.platform }} on ${{ matrix.runner }}
@@ -91,7 +93,7 @@ jobs:
           sw_vers
           echo "--- Available Xcode Applications ---"
           ls -ld /Applications/Xcode* || echo "Could not list Xcode applications"
-          
+
           echo "--- Finding Oldest Installed Xcode ---"
           OLDEST_XCODE_PATH=$(ls -d /Applications/Xcode_*.app | sort -V | head -n 1)
           if [ -n "$OLDEST_XCODE_PATH" ] && [ -d "$OLDEST_XCODE_PATH" ]; then
@@ -106,7 +108,7 @@ jobs:
           else
             echo "Could not determine the oldest Xcode installation."
           fi
-          
+
           echo "--- Selected Xcode Path ---"
           SELECTED_XCODE=$(xcode-select -p || echo "xcode-select command failed")
           echo "$SELECTED_XCODE"
@@ -234,4 +236,4 @@ jobs:
           echo "--- CMake Version (After Miniconda) ---"
           cmake --version || Write-Warning "CMake not found"
           echo "--- PATH (After Miniconda) ---"
-          echo $env:PATH 
+          echo $env:PATH
