@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - .github/workflows/debug_pypath.yml
+  workflow_dispatch:
 
 # Add concurrency control
 concurrency:
