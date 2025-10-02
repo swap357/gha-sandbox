@@ -1,0 +1,51 @@
+name: Miniconda vs Setup-Python Platform Info
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/miniconda-vs-setup-python.yml
+  workflow_dispatch:
+
+jobs:
+  setup-miniconda:
+    runs-on: macos-14
+    name: Setup Miniconda Python 3.13
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          python-version: "3.13"
+          auto-update-conda: true
+          auto-activate-base: false
+
+      - name: Check Python platform info
+        shell: bash -el {0}
+        run: |
+          python - <<'PY'
+          import platform, sysconfig
+          print("machine:", platform.machine())
+          print("get_platform:", sysconfig.get_platform())
+          print("cfg MACOSX_DEPLOYMENT_TARGET:", sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET"))
+          PY
+
+  setup-python:
+    runs-on: macos-14
+    name: Setup Python 3.13
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Check Python platform info
+        run: |
+          python - <<'PY'
+          import platform, sysconfig
+          print("machine:", platform.machine())
+          print("get_platform:", sysconfig.get_platform())
+          print("cfg MACOSX_DEPLOYMENT_TARGET:", sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET"))
+          PY
