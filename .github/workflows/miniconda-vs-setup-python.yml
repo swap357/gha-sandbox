@@ -10,9 +10,6 @@ jobs:
   setup-miniconda:
     runs-on: macos-14
     name: Setup Miniconda Python 3.12
-    defaults:
-      run:
-        shell: bash -ex {0}
     steps:
       - uses: actions/checkout@v4
 
@@ -25,7 +22,10 @@ jobs:
           auto-activate-base: true
 
       - name: Check Python platform info
+        shell: bash -el {0}
         run: |
+          which python
+          python --version
           python - <<'PY'
           import platform, sysconfig
           print("machine:", platform.machine())
