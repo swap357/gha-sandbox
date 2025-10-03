@@ -10,6 +10,9 @@ jobs:
   setup-miniconda:
     runs-on: macos-14
     name: Setup Miniconda Python 3.12
+    defaults:
+      run:
+        shell: bash -elx {0}
     steps:
       - uses: actions/checkout@v4
 
@@ -17,11 +20,11 @@ jobs:
         uses: conda-incubator/setup-miniconda@v3
         with:
           python-version: "3.12"
+          conda-remove-defaults: true
           auto-update-conda: true
-          auto-activate-base: false
+          auto-activate-base: true
 
       - name: Check Python platform info
-        shell: bash -ex {0}
         run: |
           python - <<'PY'
           import platform, sysconfig
@@ -33,6 +36,9 @@ jobs:
   setup-python:
     runs-on: macos-14
     name: Setup Python 3.12
+    defaults:
+      run:
+        shell: bash -elx {0}
     steps:
       - uses: actions/checkout@v4
 
@@ -42,7 +48,6 @@ jobs:
           python-version: "3.12"
 
       - name: Check Python platform info
-        shell: bash -ex {0}
         run: |
           which python
           python --version
