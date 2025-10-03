@@ -21,7 +21,7 @@ jobs:
           auto-activate-base: false
 
       - name: Check Python platform info
-        shell: bash -el {0}
+        shell: bash -ex {0}
         run: |
           python - <<'PY'
           import platform, sysconfig
@@ -42,6 +42,7 @@ jobs:
           python-version: "3.13"
 
       - name: Check Python platform info
+        shell: bash -ex {0}
         run: |
           python - <<'PY'
           import platform, sysconfig
