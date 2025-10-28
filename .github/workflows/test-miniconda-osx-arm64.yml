@@ -1,0 +1,42 @@
+name: Test Setup Miniconda on macOS ARM64
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  osx-arm64-build:
+    name: osx-arm64-build
+    runs-on: macos-14
+    defaults:
+      run:
+        shell: bash -elx {0}
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+      fail-fast: false
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@835234971496cad1653abb28a638a281cf32541f # v3.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          conda-remove-defaults: true
+          auto-update-conda: true
+          auto-activate-base: true
+
+      - name: Verify Installation
+        run: |
+          echo "Python version: $(python --version)"
+          echo "Conda version: $(conda --version)"
+          echo "Which python: $(which python)"
+          echo "Platform: $(uname -a)"
+          python -c "import platform; print(f'Architecture: {platform.machine()}')"
+          conda info --envs
+          conda list
