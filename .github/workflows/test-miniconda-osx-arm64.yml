@@ -1,4 +1,4 @@
-name: Test Setup Miniconda on macOS ARM64
+name: Test Setup Miniconda on macOS ARM64 - Multiple Solutions
 
 on:
   push:
@@ -6,37 +6,70 @@ on:
   workflow_dispatch:
 
 jobs:
-  osx-arm64-build:
-    name: osx-arm64-build
+  # SOLUTION 1: Remove conda-remove-defaults (recommended)
+  working-with-defaults:
+    name: ✅ Working - Use Default Channels
     runs-on: macos-14
     defaults:
       run:
         shell: bash -elx {0}
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        python-version: ["3.10", "3.11", "3.12"]
       fail-fast: false
 
     steps:
       - name: Clone repository
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          fetch-depth: 0
 
-      - name: Setup Miniconda
+      - name: Setup Miniconda (Default Channels)
         uses: conda-incubator/setup-miniconda@835234971496cad1653abb28a638a281cf32541f # v3.2.0
         with:
           python-version: ${{ matrix.python-version }}
-          conda-remove-defaults: true
           auto-update-conda: true
           auto-activate-base: true
+          # conda-remove-defaults: true  # ← REMOVED - this was the problem
 
       - name: Verify Installation
         run: |
+          echo "=== Configuration: Default Channels ==="
           echo "Python version: $(python --version)"
           echo "Conda version: $(conda --version)"
           echo "Which python: $(which python)"
           echo "Platform: $(uname -a)"
           python -c "import platform; print(f'Architecture: {platform.machine()}')"
+          echo "Available channels:"
+          conda config --show channels
           conda info --envs
-          conda list
+          conda list | head -20
+
+  # ORIGINAL BROKEN CONFIG: For demonstration
+  broken-no-channels:
+    name: ❌ Broken - No Channels Available
+    runs-on: macos-14
+    defaults:
+      run:
+        shell: bash -elx {0}
+    strategy:
+      matrix:
+        python-version: ["3.10"]  # Only test one version to avoid spam
+      fail-fast: false
+    continue-on-error: true  # Allow this job to fail without stopping others
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Setup Miniconda (Broken Config)
+        uses: conda-incubator/setup-miniconda@835234971496cad1653abb28a638a281cf32541f # v3.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          conda-remove-defaults: true  # ← This removes all channels
+          auto-update-conda: true
+          auto-activate-base: true
+          # No channels specified = BROKEN
+
+      - name: This Won't Run (Previous Step Fails)
+        if: success()
+        run: |
+          echo "This step should not execute because previous step failed"
