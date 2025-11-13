@@ -24,20 +24,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install numba
 
-      - name: Verify installations
-        run: |
-          python -c "import numpy; print(f'NumPy version: {numpy.__version__}')"
-          python -c "import numba; print(f'Numba version: {numba.__version__}')"
-
-      - name: Test NumPy AVX512_SKX detection batch syntax
+      - name: Run NumPy AVX512_SKX detection script
         shell: cmd
         run: |
-          echo Testing Windows batch command syntax...
-
-          set _NPY_CMD=from numba.misc import numba_sysinfo;sysinfo=numba_sysinfo.get_sysinfo();print(sysinfo['NumPy AVX512_SKX detected'] and sysinfo['NumPy Version']^>='1.22')
-
-          for /f %%i in ('python -c "%_NPY_CMD%"') do set NUMPY_DETECTS_AVX512_SKX_NP_GT_122=%%i
-
-          echo NumPy ^>= 1.22 with AVX512_SKX detected: %NUMPY_DETECTS_AVX512_SKX_NP_GT_122%
-
-          python -c "from numba.misc import numba_sysinfo; import pprint; pprint.pprint(numba_sysinfo.get_sysinfo())"
+          call check_numpy_avx512.bat
+          echo NUMPY_DETECTS_AVX512_SKX_NP_GT_122=%NUMPY_DETECTS_AVX512_SKX_NP_GT_122%
+          echo NPY_DISABLE_CPU_FEATURES=%NPY_DISABLE_CPU_FEATURES%
