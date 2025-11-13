@@ -1,8 +1,6 @@
 name: Test Setup Miniconda on macOS ARM64 - Multiple Solutions
 
 on:
-  push:
-  pull_request:
   workflow_dispatch:
 
 jobs:
