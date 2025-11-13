@@ -1,0 +1,43 @@
+name: Test Windows NumPy/Numba Syntax
+
+# Manual trigger only
+on:
+  workflow_dispatch:
+
+jobs:
+  test-windows-batch-syntax:
+    # Note: windows-2025 may not be available yet, using windows-latest
+    # Change to windows-2025 when available
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install numba (includes numpy dependency)
+        run: |
+          python -m pip install --upgrade pip
+          pip install numba
+
+      - name: Verify installations
+        run: |
+          python -c "import numpy; print(f'NumPy version: {numpy.__version__}')"
+          python -c "import numba; print(f'Numba version: {numba.__version__}')"
+
+      - name: Test NumPy AVX512_SKX detection batch syntax
+        shell: cmd
+        run: |
+          echo Testing Windows batch command syntax...
+
+          set _NPY_CMD=from numba.misc import numba_sysinfo;sysinfo=numba_sysinfo.get_sysinfo();print(sysinfo['NumPy AVX512_SKX detected'] and sysinfo['NumPy Version']^>='1.22')
+
+          for /f %%i in ('python -c "%_NPY_CMD%"') do set NUMPY_DETECTS_AVX512_SKX_NP_GT_122=%%i
+
+          echo NumPy ^>= 1.22 with AVX512_SKX detected: %NUMPY_DETECTS_AVX512_SKX_NP_GT_122%
+
+          python -c "from numba.misc import numba_sysinfo; import pprint; pprint.pprint(numba_sysinfo.get_sysinfo())"
