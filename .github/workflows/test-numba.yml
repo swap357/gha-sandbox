@@ -1,0 +1,17 @@
+name: Test Numba on macOS Intel
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-numba:
+    runs-on: macos-15-intel
+    steps:
+      - name: Install numba
+        run: pip install numba
+
+      - name: Verify numba import
+        run: 
+          |
+          python -c "import numba; print(f'numba {numba.__version__} installed successfully')"
+          numba -s
