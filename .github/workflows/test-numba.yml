@@ -25,7 +25,7 @@ jobs:
           python-version: "3.13"
 
       - name: Install numba
-        run: pip install "--only-binary=:all:" numba
+        run: PIP_ONLY_BINARY=":all:" pip install numba
 
       - name: Verify numba import
         run: 
