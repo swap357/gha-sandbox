@@ -19,6 +19,11 @@ jobs:
   test-numba-062:
     runs-on: macos-15-intel
     steps:
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+
       - name: Install numba 0.62
         run: pip install numba==0.62.1
 
