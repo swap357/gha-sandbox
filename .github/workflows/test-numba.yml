@@ -15,3 +15,15 @@ jobs:
           |
           python -c "import numba; print(f'numba {numba.__version__} installed successfully')"
           numba -s
+
+  test-numba-062:
+    runs-on: macos-15-intel
+    steps:
+      - name: Install numba 0.62
+        run: pip install numba==0.62.1
+
+      - name: Verify numba import
+        run: 
+          |
+          python -c "import numba; print(f'numba {numba.__version__} installed successfully')"
+          numba -s
