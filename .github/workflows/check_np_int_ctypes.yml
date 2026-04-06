@@ -1,0 +1,81 @@
+name: Check np.int_ and ctypes.c_long
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/check_np_int_ctypes.yml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-64
+            runner: ubuntu-24.04
+          - platform: linux-aarch64
+            runner: ubuntu-24.04-arm
+          - platform: osx-64
+            runner: macos-13
+          - platform: osx-arm64
+            runner: macos-14
+          - platform: win-64
+            runner: windows-latest
+
+    runs-on: ${{ matrix.runner }}
+    name: ${{ matrix.platform }} (${{ matrix.runner }})
+
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install NumPy 2.4
+        run: pip install "numpy>=2.4,<2.5"
+
+      - name: Check np.int_ and ctypes.c_long
+        shell: bash
+        run: |
+          python -c "
+          import platform, struct, sys, ctypes, numpy as np
+
+          print('=== Platform ===')
+          print(f'system:        {platform.system()}')
+          print(f'machine:       {platform.machine()}')
+          print(f'platform:      {platform.platform()}')
+          print(f'python:        {sys.version}')
+          print(f'numpy:         {np.__version__}')
+          print(f'sizeof void*:  {struct.calcsize(\"P\")} bytes ({struct.calcsize(\"P\")*8}-bit)')
+
+          print()
+          print('=== ctypes.c_long ===')
+          c_long_inst = ctypes.c_long()
+          print(f'type:          {type(ctypes.c_long)}')
+          print(f'sizeof:        {ctypes.sizeof(ctypes.c_long)} bytes')
+          print(f'value type:    {type(c_long_inst.value)}')
+
+          print()
+          print('=== np.int_ ===')
+          print(f'type:          {np.int_}')
+          print(f'dtype:         {np.dtype(np.int_)}')
+          print(f'itemsize:      {np.dtype(np.int_).itemsize} bytes')
+          print(f'name:          {np.dtype(np.int_).name}')
+          print(f'kind:          {np.dtype(np.int_).kind}')
+          print(f'char:          {np.dtype(np.int_).char}')
+
+          print()
+          print('=== Comparison ===')
+          print(f'c_long size:   {ctypes.sizeof(ctypes.c_long)} bytes')
+          print(f'np.int_ size:  {np.dtype(np.int_).itemsize} bytes')
+          print(f'match:         {ctypes.sizeof(ctypes.c_long) == np.dtype(np.int_).itemsize}')
+          print(f'np.int_ is np.intp:  {np.int_ is np.intp}')
+          print(f'np.int_ is np.int64: {np.int_ is np.int64}')
+          print(f'np.int_ is np.int32: {np.int_ is np.int32}')
+          print(f'np.intp itemsize:    {np.dtype(np.intp).itemsize} bytes')
+          "
