@@ -20,8 +20,6 @@ jobs:
             runner: ubuntu-24.04
           - platform: linux-aarch64
             runner: ubuntu-24.04-arm
-          - platform: osx-64
-            runner: macos-13
           - platform: osx-arm64
             runner: macos-14
           - platform: win-64
