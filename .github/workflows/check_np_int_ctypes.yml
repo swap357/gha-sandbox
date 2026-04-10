@@ -98,4 +98,46 @@ jobs:
           print(f'np.intp size:     {np.dtype(np.intp).itemsize} bytes')
           print(f'c_ssize_t == np.intp: {ctypes.sizeof(ctypes.c_ssize_t) == np.dtype(np.intp).itemsize}')
           print(f'c_size_t == void*:    {ctypes.sizeof(ctypes.c_size_t) == struct.calcsize(\"P\")}')
+
+          print()
+          print('=== Alias Detection: ctypes (identity + _type_ code) ===')
+          ctypes_types = {
+              'c_byte': ctypes.c_byte, 'c_ubyte': ctypes.c_ubyte,
+              'c_short': ctypes.c_short, 'c_ushort': ctypes.c_ushort,
+              'c_int': ctypes.c_int, 'c_uint': ctypes.c_uint,
+              'c_long': ctypes.c_long, 'c_ulong': ctypes.c_ulong,
+              'c_longlong': ctypes.c_longlong, 'c_ulonglong': ctypes.c_ulonglong,
+              'c_size_t': ctypes.c_size_t, 'c_ssize_t': ctypes.c_ssize_t,
+          }
+          for name, tp in ctypes_types.items():
+              aliases = [n for n, t in ctypes_types.items() if t is tp and n != name]
+              alias_str = f' -> aliases: {aliases}' if aliases else ''
+              print(f'{name:16s}  _type_={tp._type_!r}  sizeof={ctypes.sizeof(tp)}{alias_str}')
+
+          print()
+          print('=== Alias Detection: numpy (identity) ===')
+          np_types = {
+              'np.int_': np.int_, 'np.intp': np.intp,
+              'np.int8': np.int8, 'np.int16': np.int16,
+              'np.int32': np.int32, 'np.int64': np.int64,
+              'np.uint8': np.uint8, 'np.uint16': np.uint16,
+              'np.uint32': np.uint32, 'np.uint64': np.uint64,
+          }
+          for name, tp in np_types.items():
+              d = np.dtype(tp)
+              aliases = [n for n, t in np_types.items() if t is tp and n != name]
+              alias_str = f' -> aliases: {aliases}' if aliases else ''
+              print(f'{name:12s}  dtype={str(d):7s}  char={d.char!r}  itemsize={d.itemsize}{alias_str}')
+
+          print()
+          print('=== Cross-domain: ctypes <-> numpy size alignment ===')
+          cross = [
+              ('c_long',    ctypes.c_long,    'np.int_', np.int_),
+              ('c_ssize_t', ctypes.c_ssize_t, 'np.intp', np.intp),
+              ('c_size_t',  ctypes.c_size_t,  'np.uintp', np.uintp),
+          ]
+          for cname, ctp, nname, ntp in cross:
+              csz = ctypes.sizeof(ctp)
+              nsz = np.dtype(ntp).itemsize
+              print(f'{cname:12s}({csz}B) vs {nname:10s}({nsz}B)  match={csz == nsz}')
           "
