@@ -76,4 +76,26 @@ jobs:
           print(f'np.int_ is np.int64: {np.int_ is np.int64}')
           print(f'np.int_ is np.int32: {np.int_ is np.int32}')
           print(f'np.intp itemsize:    {np.dtype(np.intp).itemsize} bytes')
+
+          print()
+          print('=== ctypes.c_size_t ===')
+          c_size_t_inst = ctypes.c_size_t()
+          print(f'type:          {type(ctypes.c_size_t)}')
+          print(f'sizeof:        {ctypes.sizeof(ctypes.c_size_t)} bytes')
+          print(f'value type:    {type(c_size_t_inst.value)}')
+
+          print()
+          print('=== ctypes.c_ssize_t ===')
+          c_ssize_t_inst = ctypes.c_ssize_t()
+          print(f'type:          {type(ctypes.c_ssize_t)}')
+          print(f'sizeof:        {ctypes.sizeof(ctypes.c_ssize_t)} bytes')
+          print(f'value type:    {type(c_ssize_t_inst.value)}')
+
+          print()
+          print('=== size_t / ssize_t Comparison ===')
+          print(f'c_size_t size:    {ctypes.sizeof(ctypes.c_size_t)} bytes')
+          print(f'c_ssize_t size:   {ctypes.sizeof(ctypes.c_ssize_t)} bytes')
+          print(f'np.intp size:     {np.dtype(np.intp).itemsize} bytes')
+          print(f'c_ssize_t == np.intp: {ctypes.sizeof(ctypes.c_ssize_t) == np.dtype(np.intp).itemsize}')
+          print(f'c_size_t == void*:    {ctypes.sizeof(ctypes.c_size_t) == struct.calcsize(\"P\")}')
           "
