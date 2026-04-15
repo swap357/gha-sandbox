@@ -5,7 +5,6 @@ on:
 
 permissions:
   contents: read
-  actions: read
 
 jobs:
   test:
@@ -18,25 +17,8 @@ jobs:
           python-version: "3.14"
           allow-prereleases: true
 
-      - name: Download numba linux-64 py3.14 wheel
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          mkdir -p numba_wheel
-          curl -fsSL \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/numba/numba/actions/artifacts/6440153140/zip \
-            -o numba_wheel.zip
-          unzip numba_wheel.zip -d numba_wheel/
-
-      - name: Install llvmlite and numpy
-        run: |
-          pip install llvmlite --pre --extra-index-url https://pypi.anaconda.org/numba/label/dev/simple
-          pip install numpy
-
-      - name: Install numba wheel
-        run: pip install numba_wheel/*.whl
+      - name: Install numba, llvmlite, numpy
+        run: pip install numba numpy
 
       - name: Run sys.monitoring test
         run: |
@@ -98,26 +80,8 @@ jobs:
     container: quay.io/pypa/manylinux2014_x86_64
 
     steps:
-      - name: Download numba linux-64 py3.14 wheel
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          mkdir -p numba_wheel
-          curl -fsSL \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/numba/numba/actions/artifacts/6440153140/zip \
-            -o numba_wheel.zip
-          unzip numba_wheel.zip -d numba_wheel/
-
-      - name: Install llvmlite and numpy
-        run: |
-          /opt/python/cp314-cp314/bin/pip install llvmlite --pre \
-            --extra-index-url https://pypi.anaconda.org/numba/label/dev/simple
-          /opt/python/cp314-cp314/bin/pip install numpy
-
-      - name: Install numba wheel
-        run: /opt/python/cp314-cp314/bin/pip install numba_wheel/*.whl
+      - name: Install numba, llvmlite, numpy
+        run: /opt/python/cp314-cp314/bin/pip install numba numpy
 
       - name: Run sys.monitoring test
         run: |
