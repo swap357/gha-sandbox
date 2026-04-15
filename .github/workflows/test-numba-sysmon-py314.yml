@@ -19,13 +19,12 @@ jobs:
           allow-prereleases: true
 
       - name: Download numba linux-64 py3.14 wheel
-        uses: actions/download-artifact@v4
-        with:
-          name: numba_linux-64_wheel_py3.14
-          path: numba_wheel/
-          repository: numba/numba
-          run-id: 24428284357
-          github-token: ${{ secrets.GH_TOKEN }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p numba_wheel
+          gh api repos/numba/numba/actions/artifacts/6440153140/zip > numba_wheel.zip
+          unzip numba_wheel.zip -d numba_wheel/
 
       - name: Install llvmlite and numpy
         run: |
