@@ -1,0 +1,91 @@
+name: Test numba sys.monitoring (py3.14 wheel)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Setup Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          allow-prereleases: true
+
+      - name: Download numba linux-64 py3.14 wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: numba_linux-64_wheel_py3.14
+          path: numba_wheel/
+          repository: numba/numba
+          run-id: 24428284357
+          github-token: ${{ secrets.GH_TOKEN }}
+
+      - name: Install llvmlite and numpy
+        run: |
+          pip install llvmlite --pre --extra-index-url https://pypi.anaconda.org/numba/label/dev/simple
+          pip install numpy
+
+      - name: Install numba wheel
+        run: pip install numba_wheel/*.whl
+
+      - name: Run sys.monitoring test
+        run: |
+          python - <<'EOF'
+          import sys
+          from unittest.mock import Mock
+          from numba import jit
+
+          PY_START  = sys.monitoring.events.PY_START
+          NO_EVENTS = sys.monitoring.events.NO_EVENTS
+          TOOL_ID   = sys.monitoring.PROFILER_ID
+
+
+          def _enable_sysmon(disp):
+              disp._enable_sysmon = True
+              return disp
+
+
+          @_enable_sysmon
+          @jit("int64(int64)")
+          def foo(x):
+              return x + 1
+
+
+          def call_foo(x):
+              return 2 * foo(x + 5)
+
+
+          def run_with_events(function, args, events, tool_id=TOOL_ID):
+              """Trimmed from TestMonitoring.run_with_events
+              (numba/tests/test_sys_monitoring.py:143)."""
+              try:
+                  sys.monitoring.use_tool_id(tool_id, "custom_monitor")
+                  callbacks = {}
+                  event_bitmask = 0
+                  for event in events:
+                      cb = Mock()
+                      sys.monitoring.register_callback(tool_id, event, cb)
+                      callbacks[event] = cb
+                      event_bitmask |= event
+                  sys.monitoring.set_events(tool_id, event_bitmask)
+                  function(*args)
+              finally:
+                  sys.monitoring.set_events(tool_id, NO_EVENTS)
+                  for event in events:
+                      sys.monitoring.register_callback(tool_id, event, None)
+                  sys.monitoring.free_tool_id(tool_id)
+              return callbacks
+
+
+          cbs       = run_with_events(call_foo, (10,), (PY_START,))
+          mockcalls = cbs[PY_START]
+
+          print(f"PY_START count = {mockcalls.call_count}")
+          EOF
