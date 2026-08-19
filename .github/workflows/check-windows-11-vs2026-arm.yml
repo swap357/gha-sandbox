@@ -1,0 +1,103 @@
+name: Check windows-11-vs2026-arm MSVC toolsets
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/check-windows-11-vs2026-arm.yml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  check-toolsets:
+    name: MSVC toolsets | windows-11-vs2026-arm
+    runs-on: windows-11-vs2026-arm
+    steps:
+      - name: List VS install and MSVC toolsets
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          Write-Host "=== Runner ==="
+          Write-Host "os=${{ runner.os }} arch=${{ runner.arch }}"
+          Write-Host "ImageOS=$env:ImageOS ImageVersion=$env:ImageVersion"
+
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          if (-not (Test-Path $vswhere)) {
+              throw "vswhere.exe not found at $vswhere"
+          }
+
+          Write-Host "`n=== Visual Studio (vswhere) ==="
+          & $vswhere -all -products * -format json | ConvertFrom-Json |
+              ForEach-Object {
+                  Write-Host ("{0} {1}  {2}" -f $_.displayName,
+                      $_.catalog.productDisplayVersion, $_.installationPath)
+              }
+
+          $vsPath = (& $vswhere -latest -products * -property installationPath).Trim()
+          if (-not $vsPath) {
+              throw "vswhere did not return an installationPath"
+          }
+
+          $msvcRoot = Join-Path $vsPath "VC\Tools\MSVC"
+          Write-Host "`n=== MSVC toolset folders ($msvcRoot) ==="
+          if (-not (Test-Path $msvcRoot)) {
+              throw "MSVC tools directory missing: $msvcRoot"
+          }
+
+          $toolsets = @(Get-ChildItem $msvcRoot -Directory | Sort-Object Name)
+          $clRows = @()
+          foreach ($dir in $toolsets) {
+              $cls = @(Get-ChildItem $dir.FullName -Recurse -Filter cl.exe -ErrorAction SilentlyContinue)
+              Write-Host $dir.Name
+              foreach ($cl in $cls) {
+                  $ver = (Get-Item $cl.FullName).VersionInfo.FileVersion
+                  $rel = $cl.FullName.Substring($dir.FullName.Length + 1)
+                  Write-Host "  $rel  $ver"
+                  $clRows += "- $($dir.Name) ``$rel`` $ver"
+              }
+              if ($cls.Count -eq 0) {
+                  Write-Host "  (no cl.exe)"
+                  $clRows += "- $($dir.Name) (no cl.exe)"
+              }
+          }
+
+          Write-Host "`n=== VC toolset components ==="
+          $inst = & $vswhere -latest -products * -include packages -format json |
+              ConvertFrom-Json
+          $vcPkgs = @($inst.packages | Where-Object {
+              $_.id -match '^Microsoft\.VisualStudio\.Component(\.VC\.14\.|Group\.VC\.|s?\.VC\.Tools)'
+          } | Sort-Object id)
+          foreach ($pkg in $vcPkgs) {
+              Write-Host ("{0}  {1}" -f $pkg.id, $pkg.version)
+          }
+
+          $has1444Dir = @($toolsets | Where-Object { $_.Name -like "14.44*" }).Count -gt 0
+          $has1444Pkg = @($vcPkgs | Where-Object { $_.id -match 'VC\.14\.44' }).Count -gt 0
+          Write-Host "`n=== 14.44 ==="
+          Write-Host "folder=$has1444Dir  component=$has1444Pkg"
+
+          $vcvars = Join-Path $vsPath "VC\Auxiliary\Build\vcvarsarm64.bat"
+          if (Test-Path $vcvars) {
+              Write-Host "`n=== Default cl.exe (vcvarsarm64.bat) ==="
+              cmd /c "`"$vcvars`" >nul && cl 2>&1" | Select-Object -First 3
+          }
+
+          $summary = @(
+              "# windows-11-vs2026-arm MSVC toolsets",
+              "",
+              "- ImageOS: ``$env:ImageOS`` ``$env:ImageVersion``",
+              "- VS: $vsPath",
+              "- 14.44 folder: **$has1444Dir**",
+              "- 14.44 component: **$has1444Pkg**",
+              "",
+              "## cl.exe by toolset",
+              $clRows
+          )
+          $summary | Add-Content -Path $env:GITHUB_STEP_SUMMARY
+
+          if (-not $has1444Dir) {
+              throw "MSVC 14.44 toolset folder not found under $msvcRoot"
+          }
