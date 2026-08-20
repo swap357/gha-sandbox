@@ -2,6 +2,14 @@ name: Debug Runners
 
 on:
   workflow_dispatch:
+    inputs:
+      suite:
+        description: Which jobs to run
+        type: choice
+        default: all
+        options:
+          - all
+          - clang17-macos-26
   pull_request:
     paths:
       - .github/workflows/debug_runners.yml
@@ -11,7 +19,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  macos26-clang17:
+    name: macos-26 clang 17 (Xcode 26.0.1)
+    if: >
+      github.event_name == 'workflow_dispatch' &&
+      (github.event.inputs.suite == 'clang17-macos-26' ||
+       github.event.inputs.suite == 'all')
+    runs-on: macos-26
+    steps:
+      - name: Switch to Xcode 26.0.1
+        run: |
+          sudo xcode-select -s /Applications/Xcode_26.0.1.app
+          test "$(xcode-select -p)" = \
+            /Applications/Xcode_26.0.1.app/Contents/Developer
+          xcodebuild -version
+          clang --version
+          xcrun --find clang
+          xcrun --show-sdk-path
+          xcrun --show-sdk-version
+
+      - name: Verify clang 17 and macosx26.0
+        run: |
+          clang --version | grep -F "Apple clang version 17.0.0"
+          clang --version | grep -F "clang-1700"
+          xcodebuild -version | grep -F "Xcode 26.0.1"
+          test "$(xcrun --show-sdk-version)" = "26.0"
+
   debug:
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.suite == 'all'
     strategy:
       fail-fast: false
       matrix:
@@ -42,6 +77,15 @@ jobs:
           echo "Runner Name: ${{ runner.name }}"
           echo "Platform Var: ${{ matrix.platform }}"
           echo "Runner Var: ${{ matrix.runner }}"
+        shell: bash
+
+      - name: Switch to Xcode 26.0.1 (clang 17)
+        if: matrix.runner == 'macos-26'
+        run: |
+          sudo xcode-select -s /Applications/Xcode_26.0.1.app
+          test "$(xcode-select -p)" = \
+            /Applications/Xcode_26.0.1.app/Contents/Developer
+          clang --version | grep -F "Apple clang version 17.0.0"
         shell: bash
 
       - name: Linux Toolchain Info
