@@ -24,6 +24,8 @@ jobs:
             runner: macos-13
           - platform: osx-arm64
             runner: macos-14
+          - platform: osx-arm64
+            runner: macos-26
           - platform: win-64
             runner: windows-2019
           - platform: macos-14-large
@@ -95,36 +97,58 @@ jobs:
           echo "--- Available Xcode Applications ---"
           ls -ld /Applications/Xcode* || echo "Could not list Xcode applications"
 
-          echo "--- Finding Oldest Installed Xcode ---"
-          OLDEST_XCODE_PATH=$(ls -d /Applications/Xcode_*.app | sort -V | head -n 1)
-          if [ -n "$OLDEST_XCODE_PATH" ] && [ -d "$OLDEST_XCODE_PATH" ]; then
-            echo "Oldest Xcode found: $OLDEST_XCODE_PATH"
-            OLDEST_XCODE_SDK_PATH="$OLDEST_XCODE_PATH/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs"
-            echo "--- SDKs in Oldest Xcode ($OLDEST_XCODE_PATH) ---"
-            if [ -d "$OLDEST_XCODE_SDK_PATH" ]; then
-              ls -l "$OLDEST_XCODE_SDK_PATH"
-            else
-              echo "SDK directory not found at: $OLDEST_XCODE_SDK_PATH"
+          echo "--- Command Line Tools SDKs ---"
+          ls -la /Library/Developer/CommandLineTools/SDKs \
+            || echo "No Command Line Tools SDKs"
+
+          echo "--- All Xcode installs: version, MacOSX SDKs, clang ---"
+          shopt -s nullglob
+          found_xcode=0
+          for xcode in /Applications/Xcode*.app; do
+            [ -d "$xcode" ] || continue
+            found_xcode=1
+            echo "===== $xcode ====="
+            DEVELOPER_DIR="$xcode/Contents/Developer"
+            if [ ! -d "$DEVELOPER_DIR" ]; then
+              echo "No Contents/Developer"
+              continue
             fi
-          else
-            echo "Could not determine the oldest Xcode installation."
+            DEVELOPER_DIR="$DEVELOPER_DIR" xcodebuild -version \
+              || echo "xcodebuild -version failed"
+            echo "-- MacOSX SDKs --"
+            ls -la "$DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs" \
+              || echo "MacOSX SDK dir missing"
+            echo "-- xcodebuild -showsdks --"
+            DEVELOPER_DIR="$DEVELOPER_DIR" xcodebuild -showsdks \
+              || echo "xcodebuild -showsdks failed"
+            echo "-- clang --"
+            DEVELOPER_DIR="$DEVELOPER_DIR" xcrun --find clang \
+              || echo "xcrun --find clang failed"
+            DEVELOPER_DIR="$DEVELOPER_DIR" clang --version \
+              || echo "clang --version failed"
+            echo "-- default SDK (xcrun) --"
+            DEVELOPER_DIR="$DEVELOPER_DIR" xcrun --show-sdk-path \
+              || echo "xcrun --show-sdk-path failed"
+            DEVELOPER_DIR="$DEVELOPER_DIR" xcrun --show-sdk-version \
+              || echo "xcrun --show-sdk-version failed"
+          done
+          if [ "$found_xcode" -eq 0 ]; then
+            echo "No /Applications/Xcode*.app installs found"
           fi
 
           echo "--- Selected Xcode Path ---"
           SELECTED_XCODE=$(xcode-select -p || echo "xcode-select command failed")
           echo "$SELECTED_XCODE"
-          if [ -n "$SELECTED_XCODE" ] && [ -d "$SELECTED_XCODE" ]; then
-            echo "--- Contents of Selected Xcode Developer Dir ---"
-            ls -l "$SELECTED_XCODE"
-            echo "--- SDKs in Selected Xcode ---"
-            ls -l "$SELECTED_XCODE/Platforms/MacOSX.platform/Developer/SDKs" || echo "Could not list SDKs in selected Xcode"
-          fi
           echo "--- Xcode Version (selected) ---"
           xcodebuild -version || echo "Xcode not found or xcodebuild failed"
-          echo "--- Available SDKs (via xcodebuild) ---"
+          echo "--- Available SDKs (selected xcodebuild) ---"
           xcodebuild -showsdks || echo "Could not list SDKs via xcodebuild"
-          echo "--- Clang Version ---"
+          echo "--- Clang Version (PATH / selected) ---"
+          which clang || echo "clang not on PATH"
           clang --version || echo "Clang not found"
+          xcrun --find clang || echo "xcrun --find clang failed"
+          xcrun --show-sdk-path || echo "xcrun --show-sdk-path failed"
+          xcrun --show-sdk-version || echo "xcrun --show-sdk-version failed"
           echo "--- Python Version ---"
           python --version || python3 --version || echo "Python not found"
           echo "--- CMake Version ---"
