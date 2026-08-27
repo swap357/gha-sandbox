@@ -1,0 +1,158 @@
+name: Compare channel name vs URL
+
+# setup-conda-standalone interpolates `channel` into
+#   https://api.anaconda.org/package/${channel}/conda-standalone/files
+# so a conda URL is treated as an Anaconda.org owner name.
+# setup-miniconda writes `channels` into condarc; conda accepts names and URLs.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/compare-channel-url.yml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  probe-constructed-api-url:
+    name: Probe Anaconda API URL (${{ matrix.id }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: conda-forge-name
+            channel: conda-forge
+          - id: conda-forge-url
+            channel: https://conda.anaconda.org/conda-forge
+          - id: bootstrap-name
+            channel: bootstrap-win-arm64-round-2-native
+          - id: bootstrap-url
+            channel: https://conda.anaconda.org/bootstrap-win-arm64-round-2-native
+    steps:
+      - name: Show URL standalone would fetch
+        env:
+          CHANNEL: ${{ matrix.channel }}
+        run: |
+          set -euo pipefail
+          api="https://api.anaconda.org/package/${CHANNEL}/conda-standalone/files"
+          echo "channel input: ${CHANNEL}"
+          echo "constructed API URL: ${api}"
+          echo "--- HTTP ---"
+          curl -sS -D - -o /tmp/api-body "${api}" | head -n 20
+          echo "--- body (first 400 bytes) ---"
+          head -c 400 /tmp/api-body; echo
+
+  setup-conda-standalone:
+    name: standalone ${{ matrix.id }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: conda-forge-name
+            channel: conda-forge
+            version: latest
+            platform: linux-64
+            expect_fail: false
+          - id: conda-forge-url
+            channel: https://conda.anaconda.org/conda-forge
+            version: latest
+            platform: linux-64
+            expect_fail: true
+          - id: bootstrap-name
+            channel: bootstrap-win-arm64-round-2-native
+            version: 26.3.2.post1
+            platform: win-arm64
+            expect_fail: false
+          - id: bootstrap-url
+            channel: https://conda.anaconda.org/bootstrap-win-arm64-round-2-native
+            version: 26.3.2.post1
+            platform: win-arm64
+            expect_fail: true
+    steps:
+      - name: Show channel input and constructed API URL
+        env:
+          CHANNEL: ${{ matrix.channel }}
+        run: |
+          set -euo pipefail
+          echo "channel: ${CHANNEL}"
+          echo "api: https://api.anaconda.org/package/${CHANNEL}/conda-standalone/files"
+
+      - name: setup-conda-standalone
+        id: standalone
+        continue-on-error: ${{ matrix.expect_fail }}
+        uses: conda-incubator/setup-conda-standalone@00a34805e93a8b640aee5f8a20e8f481ad77e3b4
+        with:
+          channel: ${{ matrix.channel }}
+          conda-standalone-version: ${{ matrix.version }}
+          platform: ${{ matrix.platform }}
+          destination-directory: ${{ runner.temp }}/conda-standalone
+
+      - name: Report result
+        if: always()
+        env:
+          EXPECT_FAIL: ${{ matrix.expect_fail }}
+          OUTCOME: ${{ steps.standalone.outcome }}
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          set -euo pipefail
+          echo "expect_fail=${EXPECT_FAIL} step_outcome=${OUTCOME}"
+          echo "CONDA_EXE=${CONDA_EXE:-<unset>}"
+          if [ "${OUTCOME}" = "success" ]; then
+            test -n "${CONDA_EXE:-}"
+            test -e "${CONDA_EXE}"
+            if [ "${PLATFORM}" = "linux-64" ]; then
+              test -x "${CONDA_EXE}"
+              "${CONDA_EXE}" --version
+            fi
+          fi
+          if [ "${EXPECT_FAIL}" = "true" ]; then
+            test "${OUTCOME}" = "failure"
+          fi
+
+  setup-miniconda:
+    name: miniconda ${{ matrix.id }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: conda-forge-name
+            channels: conda-forge
+          - id: conda-forge-url
+            channels: https://conda.anaconda.org/conda-forge
+          - id: bootstrap-name
+            channels: bootstrap-win-arm64-round-2-native
+          - id: bootstrap-url
+            channels: https://conda.anaconda.org/bootstrap-win-arm64-round-2-native
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - name: setup-miniconda
+        uses: conda-incubator/setup-miniconda@835234971496cad1653abb28a638a281cf32541f
+        with:
+          miniforge-version: latest
+          activate-environment: ""
+          auto-activate-base: true
+          conda-remove-defaults: true
+          channels: ${{ matrix.channels }}
+          show-channel-urls: true
+
+      - name: Show how conda stored the channel
+        env:
+          CHANNELS_INPUT: ${{ matrix.channels }}
+        run: |
+          set -euo pipefail
+          echo "channels input: ${CHANNELS_INPUT}"
+          echo "=== conda config --show channels ==="
+          conda config --show channels
+          echo "=== conda config --show channel_alias ==="
+          conda config --show channel_alias
+          echo "=== conda config --show-sources ==="
+          conda config --show-sources
+          echo "=== conda info (channel URLs) ==="
+          conda info
