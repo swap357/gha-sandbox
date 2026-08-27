@@ -113,6 +113,64 @@ jobs:
             test "${OUTCOME}" = "failure"
           fi
 
+  setup-conda-standalone-download-url:
+    name: standalone download-url ${{ matrix.id }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: conda-forge-pkg
+            download_url: https://conda.anaconda.org/conda-forge/linux-64/conda-standalone-26.5.2-h643be8f_1.conda
+            platform: linux-64
+            expect_fail: false
+          - id: bootstrap-pkg
+            download_url: https://conda.anaconda.org/bootstrap-win-arm64-round-2-native/win-arm64/conda-standalone-26.3.2.post1-hdd604e3_single_0.conda
+            platform: win-arm64
+            expect_fail: false
+          - id: bootstrap-channel-url
+            download_url: https://conda.anaconda.org/bootstrap-win-arm64-round-2-native
+            platform: linux-64
+            expect_fail: true
+    steps:
+      - name: HEAD download-url
+        env:
+          DOWNLOAD_URL: ${{ matrix.download_url }}
+        run: |
+          set -euo pipefail
+          echo "download-url: ${DOWNLOAD_URL}"
+          curl -sS -I -L --max-redirs 5 "${DOWNLOAD_URL}" | head -n 20
+
+      - name: setup-conda-standalone
+        id: standalone
+        continue-on-error: ${{ matrix.expect_fail }}
+        uses: conda-incubator/setup-conda-standalone@00a34805e93a8b640aee5f8a20e8f481ad77e3b4
+        with:
+          download-url: ${{ matrix.download_url }}
+          destination-directory: ${{ runner.temp }}/conda-standalone
+
+      - name: Report result
+        if: always()
+        env:
+          EXPECT_FAIL: ${{ matrix.expect_fail }}
+          OUTCOME: ${{ steps.standalone.outcome }}
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          set -euo pipefail
+          echo "expect_fail=${EXPECT_FAIL} step_outcome=${OUTCOME}"
+          echo "CONDA_EXE=${CONDA_EXE:-<unset>}"
+          if [ "${OUTCOME}" = "success" ]; then
+            test -n "${CONDA_EXE:-}"
+            test -e "${CONDA_EXE}"
+            if [ "${PLATFORM}" = "linux-64" ]; then
+              test -x "${CONDA_EXE}"
+              "${CONDA_EXE}" --version
+            fi
+          fi
+          if [ "${EXPECT_FAIL}" = "true" ]; then
+            test "${OUTCOME}" = "failure"
+          fi
+
   setup-miniconda:
     name: miniconda ${{ matrix.id }}
     runs-on: ubuntu-24.04
